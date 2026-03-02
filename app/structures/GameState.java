@@ -29,6 +29,14 @@ public class GameState {
 	// key = "x,y"
 	public final Map<String, Unit> boardUnits = new HashMap<>();
 
+	// ---- Unit stats tracking (server-side) ----
+	// Note: the provided Unit class is primarily a UI representation.
+
+	public final Map<Integer, Integer> unitHealth = new HashMap<>();
+	public final Map<Integer, Integer> unitAttack = new HashMap<>();
+	// unitId -> board key ("x,y") to allow fast removal from boardUnits when a unit dies
+	public final Map<Integer, String> unitPositionKey = new HashMap<>();
+
 	// ---- Unit id generator ----
 	public int nextUnitId = 1000;
 	public int allocateUnitId() {
@@ -50,4 +58,7 @@ public class GameState {
 	public String key(int x, int y) {
 		return x + "," + y;
 	}
+
+	public final Map<Integer, Integer> unitMaxHealth = new HashMap<>();
+	public final Map<Integer, String> unitOwner = new HashMap<>();
 }

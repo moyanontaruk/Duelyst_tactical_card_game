@@ -10,6 +10,7 @@ import structures.basic.Tile;
 import structures.basic.Unit;
 import utils.BasicObjectBuilders;
 import utils.StaticConfFiles;
+import utils.UnitDeathUtils;
 
 import java.io.File;
 import java.util.Arrays;
@@ -23,7 +24,7 @@ public class Initialize implements EventProcessor {
         gameState.gameInitialized = true;
         gameState.something = true;
 
-        // ---- reset basic state  ----
+        // ---- reset basic state ----
         gameState.gameOver = false;
         gameState.winner = null;
 
@@ -34,10 +35,22 @@ public class Initialize implements EventProcessor {
         gameState.humanHealth = 20;
         gameState.aiHealth = 20;
 
-        // clear runtime state
+        // (optional) if your project uses mana, keep defaults or reset
+        // gameState.humanMana = 0;
+        // gameState.aiMana = 0;
+
+        // ---- clear runtime state ----
         gameState.boardUnits.clear();
         gameState.uiUnitById.clear();
         gameState.highlightedTargetTiles.clear();
+
+        gameState.unitHealth.clear();
+        gameState.unitAttack.clear();
+        gameState.unitPositionKey.clear();
+
+        // for Story #17/#30
+        if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.clear();
+        if (gameState.unitOwner != null) gameState.unitOwner.clear();
 
         gameState.selectedHandPos = null;
         gameState.selectedCardConfig = null;
@@ -68,7 +81,7 @@ public class Initialize implements EventProcessor {
         sleep(80);
         BasicCommands.setUnitAttack(out, humanAvatar, 2);
         sleep(80);
-        BasicCommands.setUnitHealth(out, humanAvatar, 20);
+        UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, humanAvatar, 20);
         sleep(80);
 
         Unit aiAvatar = BasicObjectBuilders.loadUnit(StaticConfFiles.aiAvatar, 200, Unit.class);
@@ -77,14 +90,29 @@ public class Initialize implements EventProcessor {
         sleep(80);
         BasicCommands.setUnitAttack(out, aiAvatar, 2);
         sleep(80);
-        BasicCommands.setUnitHealth(out, aiAvatar, 20);
+        UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, aiAvatar, 20);
         sleep(80);
 
-        // track on board
+        // ---- track on board ----
         gameState.boardUnits.put(gameState.key(hx, hy), humanAvatar);
         gameState.boardUnits.put(gameState.key(ax, ay), aiAvatar);
         gameState.uiUnitById.put(100, humanAvatar);
         gameState.uiUnitById.put(200, aiAvatar);
+
+        // ---- track stats/positions server-side ----
+        gameState.unitAttack.put(100, 2);
+        gameState.unitAttack.put(200, 2);
+        gameState.unitPositionKey.put(100, gameState.key(hx, hy));
+        gameState.unitPositionKey.put(200, gameState.key(ax, ay));
+
+        //  Story #17 needs maxHealth + owner
+        // human avatar
+        if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.put(100, 20);
+        if (gameState.unitOwner != null) gameState.unitOwner.put(100, "HUMAN");
+
+        // AI avatar
+        if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.put(200, 20);
+        if (gameState.unitOwner != null) gameState.unitOwner.put(200, "AI");
 
         // ----------------------------------------------------
         // 3) Story #3: Set player UI health to 20
