@@ -11,9 +11,6 @@ import structures.basic.UnitAnimationType;
  *
  * When a unit's health is changed, we must check if it has reached 0 (or below).
  * If so, play the death animation and then delete the unit from the board.
- *
- * Note: the provided Unit class is mainly a UI representation, so we store server-side
- * health/attack in GameState.
  */
 public class UnitDeathUtils {
 
@@ -24,6 +21,7 @@ public class UnitDeathUtils {
      */
     public static void setUnitHealthAndCheckDeath(ActorRef out, GameState gameState, Unit unit, int newHealth) {
         if (unit == null) return;
+
         int unitId = unit.getId();
 
         // 1) Update server-side health state
@@ -44,6 +42,14 @@ public class UnitDeathUtils {
     public static void killUnit(ActorRef out, GameState gameState, Unit unit) {
         if (unit == null) return;
 
+        int unitId = unit.getId();
+
+
+        if (unitId == 100 || unitId == 200) {
+
+            return;
+        }
+
         // play death animation (returns an estimate of duration)
         int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
         sleep(delayMs);
@@ -52,17 +58,22 @@ public class UnitDeathUtils {
         BasicCommands.deleteUnit(out, unit);
 
         // remove from server-side tracking
-        int unitId = unit.getId();
         gameState.uiUnitById.remove(unitId);
         gameState.unitHealth.remove(unitId);
         gameState.unitAttack.remove(unitId);
+
+        // clear Story #17 support maps
+        if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.remove(unitId);
+        if (gameState.unitOwner != null) gameState.unitOwner.remove(unitId);
 
         String key = gameState.unitPositionKey.remove(unitId);
         if (key != null) {
             gameState.boardUnits.remove(key);
         } else {
             // fallback: scan board in case position map was not maintained
-            gameState.boardUnits.entrySet().removeIf(e -> e.getValue() != null && e.getValue().getId() == unitId);
+            gameState.boardUnits.entrySet().removeIf(
+                    e -> e.getValue() != null && e.getValue().getId() == unitId
+            );
         }
     }
 
