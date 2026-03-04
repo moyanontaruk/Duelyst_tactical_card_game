@@ -75,6 +75,11 @@ public class Initialize implements EventProcessor {
         Tile humanTile = BasicObjectBuilders.loadTile(hx, hy);
         Tile aiTile = BasicObjectBuilders.loadTile(ax, ay);
 
+        // --- story card 14 healing/damage -----
+        // link avatar Id so health can change
+        gameState.humanAvatarId = 100;
+        gameState.aiAvatarId = 200;
+
         Unit humanAvatar = BasicObjectBuilders.loadUnit(StaticConfFiles.humanAvatar, 100, Unit.class);
         humanAvatar.setPositionByTile(humanTile);
         BasicCommands.drawUnit(out, humanAvatar, humanTile);
@@ -113,6 +118,7 @@ public class Initialize implements EventProcessor {
         // AI avatar
         if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.put(200, 20);
         if (gameState.unitOwner != null) gameState.unitOwner.put(200, "AI");
+
 
         // ----------------------------------------------------
         // 3) Story #3: Set player UI health to 20

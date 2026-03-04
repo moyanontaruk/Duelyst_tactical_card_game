@@ -48,8 +48,6 @@ public class Unit {
 		this.animations = animations;
 	}
 	
-	
-	
 	public Unit(int id, UnitAnimationType animation, Position position, UnitAnimationSet animations,
 			ImageCorrection correction) {
 		super();

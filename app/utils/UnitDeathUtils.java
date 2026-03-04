@@ -5,6 +5,7 @@ import commands.BasicCommands;
 import structures.GameState;
 import structures.basic.Unit;
 import structures.basic.UnitAnimationType;
+import structures.basic.Player;
 
 /**
  * Story Card #13 (Unit Death)
@@ -30,7 +31,17 @@ public class UnitDeathUtils {
         // 2) Update UI health label
         BasicCommands.setUnitHealth(out, unit, newHealth);
 
-        // 3) If health <= 0, kill the unit
+        // --- story card 14 damage/healing ----
+        // 3) if unit is avatar, change health
+        if (unitId == gameState.humanAvatarId){
+            gameState.humanHealth = newHealth;
+            BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
+        } else if (unitId == gameState.aiAvatarId){
+            gameState.aiHealth = newHealth;
+            BasicCommands.setPlayer2Health(out, new Player(gameState.aiHealth, gameState.aiMana));
+        }
+
+        // 4) If health <= 0, kill the unit
         if (newHealth <= 0) {
             killUnit(out, gameState, unit);
         }

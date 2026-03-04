@@ -61,4 +61,38 @@ public class GameState {
 
 	public final Map<Integer, Integer> unitMaxHealth = new HashMap<>();
 	public final Map<Integer, String> unitOwner = new HashMap<>();
+
+	// ---- Story Card 14 damage/healing ----
+	// avatar tracking
+	public Integer humanAvatarId = null;
+	public Integer aiAvatarId = null;
+
+	// apply damage to unit
+	public void applyDamageToUnit(int unitId, int amount){
+		//get health value from unit id, if not there default to 0
+		int current = unitHealth.getOrDefault(unitId, 0);
+		int newHp = current - amount;
+		unitHealth.put(unitId, newHp);
+
+		// applying damage to human/ai player if unit is avatar
+		if (unitId == humanAvatarId){
+			humanHealth = newHp;
+		} else if (unitId == aiAvatarId){
+			aiHealth = newHp;
+		}
+	}
+
+	//apply healing to unit
+	public void applyHealingToUnit(int unitId, int amount){
+		int current = unitHealth.getOrDefault(unitId, 0);
+		int newHp = current + amount;
+		unitHealth.put(unitId, newHp);
+
+		//apply healing to human/ai player if unit if avatar
+		if (unitId == humanAvatarId){
+			humanHealth = newHp;
+		} else if (unitId == aiAvatarId){
+			aiHealth = newHp;
+		}
+	}
 }
