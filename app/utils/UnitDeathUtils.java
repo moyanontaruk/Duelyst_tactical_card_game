@@ -28,7 +28,9 @@ public class UnitDeathUtils {
         gameState.unitHealth.put(unitId, newHealth);
 
         // 2) Update UI health label
-        BasicCommands.setUnitHealth(out, unit, newHealth);
+        if (out != null){
+            BasicCommands.setUnitHealth(out, unit, newHealth);
+        }
 
         // 3) If health <= 0, kill the unit
         if (newHealth <= 0) {
@@ -51,11 +53,13 @@ public class UnitDeathUtils {
         }
 
         // play death animation (returns an estimate of duration)
-        int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
-        sleep(delayMs);
+        if (out != null) {
+            int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
+            sleep(delayMs);
 
-        // delete from UI
-        BasicCommands.deleteUnit(out, unit);
+            // delete from UI
+            BasicCommands.deleteUnit(out, unit);
+        }
 
         // remove from server-side tracking
         gameState.uiUnitById.remove(unitId);
