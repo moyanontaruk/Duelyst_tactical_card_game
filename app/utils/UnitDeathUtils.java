@@ -29,7 +29,9 @@ public class UnitDeathUtils {
         gameState.unitHealth.put(unitId, newHealth);
 
         // 2) Update UI health label
-        BasicCommands.setUnitHealth(out, unit, newHealth);
+        if (out != null){
+            BasicCommands.setUnitHealth(out, unit, newHealth);
+        }
 
         // --- story card 14 damage/healing ----
         // 3) if unit is avatar, change health
@@ -62,11 +64,13 @@ public class UnitDeathUtils {
         }
 
         // play death animation (returns an estimate of duration)
-        int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
-        sleep(delayMs);
+        if (out != null) {
+            int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
+            sleep(delayMs);
 
-        // delete from UI
-        BasicCommands.deleteUnit(out, unit);
+            // delete from UI
+            BasicCommands.deleteUnit(out, unit);
+        }
 
         // remove from server-side tracking
         gameState.uiUnitById.remove(unitId);
