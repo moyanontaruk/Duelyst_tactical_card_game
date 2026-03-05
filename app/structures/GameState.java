@@ -62,6 +62,21 @@ public class GameState {
 	public final Map<Integer, Integer> unitMaxHealth = new HashMap<>();
 	public final Map<Integer, String> unitOwner = new HashMap<>();
 
+	// SB6, SB7, SB9
+	//storing which unit the player has selected currently
+	public Integer selectUnitId = null;
+
+	//storing board title key (x,y) that are highlight for that movement
+	public final Set<String> highlightedMovedTiles = new HashSet<>();
+
+	//for tracking if a unit has already moved during the turn
+	public final Map<Integer, Boolean> unitHasMoved = new HashMap<>();
+
+	// for tracking if unit already attacked during the turn
+	public final Map<Integer, Boolean> unitHadAttacked = new HashMap<>();
+
+
+
 	// ---- Story Card 14 damage/healing ----
 	// avatar tracking
 	public Integer humanAvatarId = null;
