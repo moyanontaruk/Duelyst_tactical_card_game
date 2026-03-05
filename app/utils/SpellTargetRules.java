@@ -6,6 +6,7 @@ import structures.basic.Card;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import structures.basic.Unit;
 
 /**
  * Story #31 helper (single GameState architecture):
@@ -29,9 +30,12 @@ public final class SpellTargetRules {
         int aiAx = 7, aiAy = 2;
 
 
-        if (n.equals("truestrike") || n.equals("beamshock") || n.equals("dark terminus")) {
-            // Return all occupied tiles (you can refine later by owner)
+        if (n.equals("truestrike") || n.equals("beamshock")) {
             return tilesWithAnyUnit(gameState);
+        }
+
+        if (n.equals("dark terminus")) {
+            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
         }
 
         // Sundrop Elixir -> any unit tile
@@ -91,5 +95,34 @@ public final class SpellTargetRules {
             }
         }
         return res;
+    }
+
+    private static List<int[]> tilesWithEnemyNonAvatarUnits(GameState gameState, String enemyOwner) {
+    List<int[]> res = new ArrayList<>();
+
+    for (String k : gameState.boardUnits.keySet()) {
+        Unit u = gameState.boardUnits.get(k);
+        if (u == null) continue;
+
+        int id = u.getId();
+
+        // exclude avatars
+        if (id == gameState.humanAvatarId || id == gameState.aiAvatarId) continue;
+
+        // must be enemy
+        String owner = gameState.unitOwner.get(id);
+        if (owner == null || !owner.equals(enemyOwner)) continue;
+
+        String[] parts = k.split(",");
+        if (parts.length != 2) continue;
+
+        try {
+            int x = Integer.parseInt(parts[0]);
+            int y = Integer.parseInt(parts[1]);
+            res.add(new int[]{x, y});
+        } catch (NumberFormatException ignored) {}
+    }
+
+    return res;
     }
 }

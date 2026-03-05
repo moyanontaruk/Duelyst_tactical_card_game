@@ -14,6 +14,7 @@ import utils.BasicObjectBuilders;
 import utils.StaticConfFiles;
 import utils.HighlightUtils;
 import utils.UnitDeathUtils;
+import utils.DestroySpellUtils;
 
 // ✅ new utils (you must create these two files)
 import utils.SummonUtils;
@@ -241,7 +242,7 @@ public class TileClicked implements EventProcessor {
             BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
 
             // kill target
-            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
+            if (!DestroySpellUtils.destroyNonAvatarUnit(out, gameState, target)) return;
 
             // summon wraithling on same tile
             SummonUtils.spawnWraithling(out, gameState, tilex, tiley, "HUMAN");
