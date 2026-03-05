@@ -19,3 +19,6 @@ Thumbs.db
 
 # Java
 *.class
+
+# sbt cache bug on Windows
+null/
