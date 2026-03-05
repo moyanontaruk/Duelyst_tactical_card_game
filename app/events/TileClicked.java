@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+
 public class TileClicked implements EventProcessor {
 
     @Override
@@ -34,6 +35,58 @@ public class TileClicked implements EventProcessor {
 
         int tilex = message.get("tilex").asInt();
         int tiley = message.get("tiley").asInt();
+
+
+        //SC 6 addition start -MAggie
+        // only triggerrs when no card is selected yet
+        // or has not moved or attacked yet
+        // 2 tiles cardinally or 1 diagonally,
+        // tiles with units wont be highlighted
+        boolean noCardSelected = (
+                gameState.selectedHandPos == null || gameState.selectedCardConfig == null);
+        if (noCardSelected) {
+            clearMoveHighlights(out, gameState);
+
+            // checks if the tile clicked has a unit
+            String clickedKey = gameState.key(tilex, tiley);
+            Unit clickedUnit = gameState.boardUnits.get(clickedKey);
+
+            // if the tile is empty, nothing willbe highlighted
+            if (clickedUnit == null) return;
+
+            String owner = gameState.unitOwner.get(clickedUnit.getId());
+            if (!"HUMAN".equals(owner)) return;
+
+            int unitId = clickedUnit.getId();
+
+            // constraints -- unit cannot have already attacked
+            boolean alreadyAttacked = gameState.unitHadAttacked.getOrDefault(unitId, false);
+            if (alreadyAttacked) {
+                BasicCommands.addPlayer1Notification(
+                        out,
+                        // message showing to player and there will be mo highlighted tile
+                        "This unit already attacked.", 2);
+                return;
+            }
+
+            // cant have already moved
+            boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(unitId, false);
+            if (alreadyMoved) {
+                BasicCommands.addPlayer1Notification(out, "This unit already moved.", 2);
+                return;
+            }
+
+            //storing which unit is selected
+            gameState.selectUnitId = unitId;
+
+            List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
+
+            highlightMoveTilesWhite(out, gameState, reachable);
+
+            return;
+        }
+        //SC 6 done
+
 
         // Must have selected a card
         if (gameState.selectedHandPos == null) return;
@@ -264,5 +317,113 @@ public class TileClicked implements EventProcessor {
             res.add("conf/gameconfs/cards/" + p1[i]);
         }
         return res;
+    }
+
+    // helper for SC6 -Maggie
+    private void clearMoveHighlights(ActorRef out, GameState gameState) {
+        if (gameState.highlightedMovedTiles.isEmpty()) return;
+        for (String key : gameState.highlightedMovedTiles) {
+            String[] parts = key.split(",");
+            int x = Integer.parseInt(parts[0]);
+            int y = Integer.parseInt(parts[1]);
+
+            Tile tile = BasicObjectBuilders.loadTile(x, y);
+            BasicCommands.drawTile(out, tile, 0); //won't highlight if =0
+        }
+
+        gameState.highlightedMovedTiles.clear();
+    }
+
+    // highlights tiles that are moveable in white
+    // then will store in team state "highlightedMovedtiles"
+    private void highlightMoveTilesWhite(
+            ActorRef out,
+            GameState gameState,
+            List<int[]> tiles) {
+
+        for (int[] xy : tiles) {
+            int x = xy[0];
+            int y = xy[1];
+            Tile boardTile = BasicObjectBuilders.loadTile(x, y);
+
+            //highligh white =1
+            BasicCommands.drawTile(out, boardTile, 1);
+
+            gameState.highlightedMovedTiles.add(gameState.key(x, y));
+        }
+    }
+
+    private List<int[]> getValidMoveTiles(
+            GameState gameState,
+            int startX,
+            int startY) {
+
+        List<int[]> validTiles = new ArrayList<>();
+
+        int[][] cardinalsDir = new int[][]{
+                {1, 0},  // left of screen
+                {-1, 0}, // right of screen
+                {0, 1}, // down
+                {0, -1} // up
+        };
+
+        for (int[] direction : cardinalsDir) {
+            int dirX = direction[0];
+            int dirY = direction[1];
+
+            int step1X = startX + dirX;
+            int step1Y = startY + dirY;
+
+            if (!isOnBoard(step1X, step1Y))
+                continue;
+
+            String step1Key = gameState.key(step1X, step1Y);
+
+            // cannot mvoe if step1 has unit and cant go around/thru
+            if (gameState.boardUnits.containsKey(step1Key))
+                continue;
+
+            validTiles.add(new int[]{step1X, step1Y});
+
+            // can only move bc first tile was empty
+            int step2X = startX + 2 * dirX;
+            int step2Y = startY + 2 * dirY;
+
+            if (!isOnBoard(step2X, step2Y))
+                continue;
+
+            String step2Key = gameState.key(step2X, step2Y);
+
+            // needs to be empty for the 2 square move
+            if (gameState.boardUnits.containsKey(step2Key))
+                continue;
+
+            validTiles.add(new int[]{step2X, step2Y});
+        }
+
+        // diagional can only do 1 sqaure move
+        int[][] diagonalDir = new int[][]{
+                {1, 1},
+                {1, -1},
+                {-1, 1},
+                {-1, -1}
+        };
+
+        for (int[] direction : diagonalDir) {
+            int diagX = startX + direction[0];
+            int diagY = startY + direction[1];
+
+            if (!isOnBoard(diagX, diagY))
+                continue;
+
+            String key = gameState.key(diagX, diagY);
+
+            //diagonal square needs to be empty
+            if (gameState.boardUnits.containsKey(key))
+                continue;
+
+            validTiles.add(new int[]{diagX, diagY});
+        }
+        return validTiles;
     }
 }

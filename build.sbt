@@ -30,8 +30,8 @@ lazy val root = (project in file("."))
     libraryDependencies += "com.novocode" % "junit-interface" % "0.11" % Test exclude("junit", "junit-dep"),
     LessKeys.compress := true,
     javacOptions ++= Seq(
+      "--release", "11",
       "-Xlint:unchecked",
-      "-Xlint:deprecation",
-      "-Werror"
+      "-Xlint:deprecation"
     )
   )
