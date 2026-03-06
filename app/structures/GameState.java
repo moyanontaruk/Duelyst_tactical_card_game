@@ -3,6 +3,8 @@ package structures;
 import java.util.*;
 
 import structures.basic.Unit;
+import commands.BasicCommands;
+import akka.actor.ActorRef;
 
 public class GameState {
 
@@ -79,9 +81,7 @@ public class GameState {
 	// for tracking if unit already attacked during the turn
 	public final Map<Integer, Boolean> unitHadAttacked = new HashMap<>();
 
-
-
-	// ---- Story Card 14 damage/healing ----
+// ---- Story Card 14 damage/healing ----
 	// avatar tracking
 	public Integer humanAvatarId = null;
 	public Integer aiAvatarId = null;
@@ -112,6 +112,43 @@ public class GameState {
 			humanHealth = newHp;
 		} else if (unitId == aiAvatarId){
 			aiHealth = newHp;
+		}
+	}
+
+
+	// --- story card 19: damage trigger abilities ---
+	// Zeal and Horn of the Forsaken
+	public final Set<Integer> zealUnitIds = new HashSet<>();
+	public boolean hornOfForsaken = false;
+	public int hornRobustness = 0;
+
+	public void damageOnAvatarTrigger(ActorRef out, int unitId, int damage) {
+		//only trigger on damage
+		if (damage <= 0) return;
+		String damagedOwner = (unitId == humanAvatarId) ? "HUMAN" : (unitId == aiAvatarId) ? "AI" : null;
+		if (damagedOwner == null) return;
+
+		//Zeal trigger (Silvergaurd Knight)
+		for (int zealUnitId : zealUnitIds){
+			if (!damagedOwner.equals(unitOwner.get(zealUnitId))) continue;
+			int currentAttack = unitAttack.getOrDefault(zealUnitId, 0);
+			unitAttack.put(zealUnitId, currentAttack + 2);
+			Unit zealUnit = uiUnitById.get(zealUnitId);
+			if (zealUnit != null && out != null){
+				BasicCommands.setUnitAttack(out, zealUnit, currentAttack + 2);
+			}
+		}
+
+		// Horn of the Forsaken trigger
+		if (unitId == humanAvatarId && hornOfForsaken){
+			hornRobustness --;
+			if (hornRobustness <= 0){
+				hornRobustness = 0;
+				hornOfForsaken = false;
+				if (out != null){
+					BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken destroyed!", 3);
+				}
+			}
 		}
 	}
 }
