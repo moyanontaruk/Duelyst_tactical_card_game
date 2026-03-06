@@ -15,8 +15,9 @@ import utils.StaticConfFiles;
 import utils.HighlightUtils;
 import utils.UnitDeathUtils;
 import utils.DestroySpellUtils;
+import utils.StunRules;
 
-// ✅ new utils (you must create these two files)
+//  new utils (you must create these two files)
 import utils.SummonUtils;
 import utils.OpeningGambitResolver;
 
@@ -79,6 +80,10 @@ public class TileClicked implements EventProcessor {
 
             //storing which unit is selected
             gameState.selectUnitId = unitId;
+
+            if (StunRules.rejectIfStunned(out, gameState, unitId)) {
+            return;
+            }
 
             List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
 
