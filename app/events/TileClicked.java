@@ -320,9 +320,36 @@ public class TileClicked implements EventProcessor {
             return;
         }
 
+        //Spell: Horn of the Forsaken -- ARTIFACT 3 (give friendly unit +2/+2)
+        // ------ story card 19: damage ability trigger -------
+        if (name.equals("horn of the forsaken")) {
+            // target must be human avatar tile (1,2)
+            if (tilex !=1 || tiley!=2) return;
+
+            //spend mana
+            gameState.humanMana -= cost;
+            BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+
+            // play effect on avatar tile
+            Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
+            EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
+            if (fx != null) BasicCommands.playEffectAnimation(out, fx, tile);
+
+            //equip artifact -- story card 19----
+            gameState.hornOfTheForsaken = true;
+            gameState.hornRobustness = 3;
+
+            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken equipped for the next 3 turns!", 3);
+
+            consumeSelectedCardAndClear(out, gameState, selectedPos);
+            return;
+        }
+
         // Unknown spell - do nothing but clear highlights (optional)
         BasicCommands.addPlayer1Notification(out, "Spell not implemented", 2);
+
     }
+
 
     // ------------------------------------------------------------
     // helpers

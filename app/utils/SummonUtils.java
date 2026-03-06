@@ -54,6 +54,13 @@ public final class SummonUtils {
         gameState.unitMaxHealth.put(unitId, hp);
         gameState.unitOwner.put(unitId, owner);
 
+        // --- story card 19 damage trigger ability ---
+        // register Zeal units (Silverguard Knight)
+        if (unitConfig != null && unitConfig.contains("silverguard_knight")){
+            gameState.zealUnitIds.add(unitId);
+        }
+        
+
         return unit;
     }
 

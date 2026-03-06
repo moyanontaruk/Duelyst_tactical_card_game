@@ -1,3 +1,14 @@
+error id: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/UnitDeathUtils.java:_empty_/GameState#onDamageOnAvatarTrigger#
+file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/UnitDeathUtils.java
+empty definition using pc, found symbol in pc: _empty_/GameState#onDamageOnAvatarTrigger#
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+
+offset: 974
+uri: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/UnitDeathUtils.java
+text:
+```scala
 package utils;
 
 import akka.actor.ActorRef;
@@ -28,7 +39,7 @@ public class UnitDeathUtils {
         // --- story card 19 damage abilities trigger ----
         int currentHealth = gameState.unitHealth.getOrDefault(unitId, 0);
         int damage = currentHealth - newHealth;
-        gameState.damageOnAvatarTrigger(out, unitId, damage);
+        gameState.onDamageOnAvatarTrigger@@(null, unitId, damage);
 
         // 1) Update server-side health state
         gameState.unitHealth.put(unitId, newHealth);
@@ -81,9 +92,6 @@ public class UnitDeathUtils {
         gameState.uiUnitById.remove(unitId);
         gameState.unitHealth.remove(unitId);
         gameState.unitAttack.remove(unitId);
-        
-        //story card 19: remove from zeal on death
-        gameState.zealUnitIds.remove(unitId);
 
         // clear Story #17 support maps
         if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.remove(unitId);
@@ -108,3 +116,9 @@ public class UnitDeathUtils {
         }
     }
 }
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: _empty_/GameState#onDamageOnAvatarTrigger#
