@@ -53,12 +53,12 @@ public final class StunRules {
     public static void clearStunsForEndingPlayer(GameState gameState, String endingPlayer) {
         if (gameState == null || endingPlayer == null) return;
 
-        Iterator<Map.Entry<Integer>> it =
+        Iterator<Map.Entry<Integer, String>> it =
                 gameState.stunnedUntilEndOfOwnersTurn.entrySet().iterator();
 
         while (it.hasNext()) {
             Map.Entry<Integer, String> e = it.next();
-            if (endingPlayer.equals() {
+            if (endingPlayer.equals(e.getValue())) {
                 it.remove();
             }
         }
@@ -70,7 +70,7 @@ public final class StunRules {
     public static boolean rejectIfStunned(ActorRef out, GameState gameState, int unitId) {
         if (!isStunnedThisTurn(gameState, unitId)) return false;
 
-        BasicCommands.addPlayer1Notification(out);
+        BasicCommands.addPlayer1Notification(out, "This unit is stunned.", 2);
         return true;
     }
 }
