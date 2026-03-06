@@ -26,6 +26,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import utils.SpellTargetRules;
+import utils.DirectDamageSpellUtils;
+
 
 public class TileClicked implements EventProcessor {
 
@@ -182,6 +185,10 @@ public class TileClicked implements EventProcessor {
             return;
         }
 
+        if (!isValidSpellTarget(gameState, card, tilex, tiley)) {
+            return;
+        }
+
         // ============================================================
         // Spell: Wraithling Swarm (summon 3 wraithlings around avatar)
         // ============================================================
@@ -228,6 +235,35 @@ public class TileClicked implements EventProcessor {
             return;
         }
 
+
+        //#26
+        // ============================================================
+        // Spell: Truestrike (deal 2 damage to an enemy non-avatar unit)
+        // ============================================================
+        if (name.equals("truestrike")) {
+
+        Unit target = gameState.boardUnits.get(gameState.key(tilex, tiley));
+        if (target == null) return;
+
+        // spend mana
+        gameState.humanMana -= cost;
+        BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+
+        boolean applied = DirectDamageSpellUtils.dealDamageToUnit(
+            out,
+            gameState,
+            target,
+            2,
+            "AI",
+            false,
+            StaticConfFiles.f1_martyrdom
+        );
+
+        if (!applied) return;
+
+        consumeSelectedCardAndClear(out, gameState, selectedPos);
+        return;
+        }
 
         // ============================================================
         // Spell: Beam Shock (stun enemy non-avatar unit)
@@ -291,6 +327,20 @@ public class TileClicked implements EventProcessor {
     // ------------------------------------------------------------
     // helpers
     // ------------------------------------------------------------
+
+
+    //#21  only valid target tile can apply spell
+    private boolean isValidSpellTarget(GameState gameState, Card card, int tilex, int tiley) {
+    List<int[]> validTargets = SpellTargetRules.getValidTargetTiles(gameState, card);
+    for (int[] xy : validTargets) {
+        if (xy != null && xy.length >= 2 && xy[0] == tilex && xy[1] == tiley) {
+            return true;
+        }
+    }
+    return false;
+    }
+
+
 
     private boolean isWithinOneTile(int x, int y, int ax, int ay) {
         int dx = Math.abs(x - ax);
