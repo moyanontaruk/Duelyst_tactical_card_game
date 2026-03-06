@@ -300,7 +300,7 @@ public class TileClicked implements EventProcessor {
             if (fx != null) BasicCommands.playEffectAnimation(out, fx, tile);
 
             //equip artifact -- story card 19----
-            gameState.hornOfTheForsaken = true;
+            gameState.hornOfForsaken = true;
             gameState.hornRobustness = 3;
 
             BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken equipped for the next 3 turns!", 3);
