@@ -102,4 +102,34 @@ public final class SpellTargetRules {
         return res;
     }
 
+    private static List<int[]> tilesWithEnemyNonAvatarUnits(GameState gameState, String enemyOwner) {
+    List<int[]> res = new ArrayList<>();
+
+    for (String k : gameState.boardUnits.keySet()) {
+        Unit u = gameState.boardUnits.get(k);
+        if (u == null) continue;
+
+        int id = u.getId();
+
+        // exclude avatars
+        if (id == gameState.humanAvatarId || id == gameState.aiAvatarId) continue;
+
+        // only enemy units
+        String owner = gameState.unitOwner.get(id);
+        if (owner == null || !owner.equals(enemyOwner)) continue;
+
+        String[] parts = k.split(",");
+        if (parts.length != 2) continue;
+
+        try {
+            int x = Integer.parseInt(parts[0]);
+            int y = Integer.parseInt(parts[1]);
+            res.add(new int[]{x, y});
+        } catch (NumberFormatException ignored) {
+        }
+    }
+
+    return res;
+}
+
 }
