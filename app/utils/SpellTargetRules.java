@@ -32,7 +32,7 @@ public final class SpellTargetRules {
 
 
         if (n.equals("truestrike")) {
-            return tilesWithAnyUnit(gameState);
+            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
         }
 
         if (n.equals("beamshock")) {

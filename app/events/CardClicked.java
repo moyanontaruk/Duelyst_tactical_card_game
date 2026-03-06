@@ -66,6 +66,7 @@ public class CardClicked implements EventProcessor {
      * handPosition 1..3 -> first 3 sorted "1_*.json" cards.
      * Others -> null.
      */
+    /** 
     private String getInitialHumanCardConfig(int handPosition) {
 
         if (handPosition < 1 || handPosition > 3) return null;
@@ -82,5 +83,25 @@ public class CardClicked implements EventProcessor {
         if (idx >= p1.length) return null;
 
         return "conf/gameconfs/cards/" + p1[idx];
+    }
+
+    */
+
+    private String getInitialHumanCardConfig(int handPosition) {
+
+    if (handPosition < 1 || handPosition > 6) return null;
+
+    File dir = new File("conf/gameconfs/cards/");
+    String[] p1 = dir.list((d, name) ->
+            name.startsWith("1_") && name.endsWith(".json"));
+
+    if (p1 == null || p1.length == 0) return null;
+
+    Arrays.sort(p1);
+
+    int idx = handPosition - 1;
+    if (idx >= p1.length) return null;
+
+    return "conf/gameconfs/cards/" + p1[idx];
     }
 }
