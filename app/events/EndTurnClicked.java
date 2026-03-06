@@ -8,6 +8,7 @@ import structures.basic.Card;
 import structures.basic.Player;
 import utils.BasicObjectBuilders;
 import utils.HighlightUtils;
+import utils.StunRules;
 
 import java.io.File;
 import java.util.Arrays;
@@ -23,6 +24,9 @@ public class EndTurnClicked implements EventProcessor {
 		HighlightUtils.clearSelectionAndHighlights(out, gameState);
 
 		String current = gameState.activePlayer; // "HUMAN" or "AI"
+
+		// Story #29: when a player's stunned turn ends, clear those stuns
+		StunRules.clearStunsForEndingPlayer(gameState, current);
 
 		// ----------------------------------------------------
 		// Story #1 + #2 :
