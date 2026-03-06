@@ -228,6 +228,34 @@ public class TileClicked implements EventProcessor {
             return;
         }
 
+
+        // ============================================================
+        // Spell: Beam Shock (stun enemy non-avatar unit)
+        // ============================================================
+        if (name.equals("beamshock")) {
+
+        Unit target = gameState.boardUnits.get(gameState.key(tilex, tiley));
+        if (target == null) return;
+
+        int targetId = target.getId();
+
+        // must be enemy non-avatar
+        if (targetId == gameState.humanAvatarId || targetId == gameState.aiAvatarId) return;
+
+        String owner = gameState.unitOwner.get(targetId);
+        if (!"AI".equals(owner)) return;
+
+        // spend mana
+        gameState.humanMana -= cost;
+        BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+
+        // apply stun
+        if (!StunRules.applyStunToUnit(out, gameState, target)) return;
+
+        consumeSelectedCardAndClear(out, gameState, selectedPos);
+        return;
+        }
+        
         // ============================================================
         // Spell: Dark Terminus (destroy enemy creature; summon wraithling)
         // ============================================================
