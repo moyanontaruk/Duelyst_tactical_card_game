@@ -35,18 +35,30 @@ public final class StunRules {
     }
 
     /**
+     * Returns true only during the stunned unit owner's blocked turn.
+     */
+    public static boolean isStunnedThisTurn(GameState gameState, int unitId) {
+        if (gameState == null) return false;
+
+        String blockedOwnerTurn = gameState.stunnedUntilEndOfOwnersTurn.get(unitId);
+        if (blockedOwnerTurn == null) return false;
+
+        return blockedOwnerTurn.equals(gameState.activePlayer);
+    }
+
+    /**
      * Called when a player's turn ends.
      * Clears any stuns that were active for that player's turn only.
      */
     public static void clearStunsForEndingPlayer(GameState gameState, String endingPlayer) {
         if (gameState == null || endingPlayer == null) return;
 
-        Iterator<Map.Entry<Integer, String>> it =
+        Iterator<Map.Entry<Integer>> it =
                 gameState.stunnedUntilEndOfOwnersTurn.entrySet().iterator();
 
         while (it.hasNext()) {
             Map.Entry<Integer, String> e = it.next();
-            if (endingPlayer.equals(e.getValue())) {
+            if (endingPlayer.equals() {
                 it.remove();
             }
         }
@@ -58,9 +70,7 @@ public final class StunRules {
     public static boolean rejectIfStunned(ActorRef out, GameState gameState, int unitId) {
         if (!isStunnedThisTurn(gameState, unitId)) return false;
 
-        BasicCommands.addPlayer1Notification(out, "This unit is stunned.", 2);
+        BasicCommands.addPlayer1Notification(out);
         return true;
     }
 }
-
-
