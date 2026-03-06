@@ -37,6 +37,10 @@ public class GameState {
 	// unitId -> board key ("x,y") to allow fast removal from boardUnits when a unit dies
 	public final Map<Integer, String> unitPositionKey = new HashMap<>();
 
+	// ---- Story Card #29: stun tracking ----
+	// unitId -> owner whose next turn is blocked by stun ("HUMAN" or "AI")
+	public final Map<Integer, String> stunnedUntilEndOfOwnersTurn = new HashMap<>();
+
 	// ---- Unit id generator ----
 	public int nextUnitId = 1000;
 	public int allocateUnitId() {
