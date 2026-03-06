@@ -81,6 +81,10 @@ public class TileClicked implements EventProcessor {
             //storing which unit is selected
             gameState.selectUnitId = unitId;
 
+            if (StunRules.rejectIfStunned(out, gameState, unitId)) {
+            return;
+            }
+
             List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
 
             highlightMoveTilesWhite(out, gameState, reachable);
