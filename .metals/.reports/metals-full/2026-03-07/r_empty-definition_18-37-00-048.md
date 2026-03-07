@@ -1,3 +1,14 @@
+error id: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/SummonUtils.java:_empty_/GameState#unitHasAttacked#
+file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/SummonUtils.java
+empty definition using pc, found symbol in pc: _empty_/GameState#unitHasAttacked#
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+
+offset: 2294
+uri: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/SummonUtils.java
+text:
+```scala
 package utils;
 
 import akka.actor.ActorRef;
@@ -62,10 +73,9 @@ public final class SummonUtils {
         
         // --- story card 23: rush ability ---
         boolean hasRush = (unit instanceof BetterUnit) && ((BetterUnit) unit).getHasRush();
-        // if unit doesn't have rush, show it moved and attacked 
         if (!hasRush){
             gameState.unitHasMoved.put(unitId, true);
-            gameState.unitHadAttacked.put(unitId, true);
+            gameState.@@unitHasAttacked.put(unitId, true);
         }
 
         return unit;
@@ -84,3 +94,9 @@ public final class SummonUtils {
                 owner);
     }
 }
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: _empty_/GameState#unitHasAttacked#

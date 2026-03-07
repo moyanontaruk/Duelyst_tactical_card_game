@@ -1,3 +1,14 @@
+error id: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/events/TileClicked.java:_empty_/BasicObjectBuilders#
+file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/events/TileClicked.java
+empty definition using pc, found symbol in pc: _empty_/BasicObjectBuilders#
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+
+offset: 12556
+uri: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/events/TileClicked.java
+text:
+```scala
 package events;
 
 import akka.actor.ActorRef;
@@ -161,14 +172,6 @@ public class TileClicked implements EventProcessor {
             // Story #17 needs these
             gameState.unitMaxHealth.put(unitId, hp);
             gameState.unitOwner.put(unitId, "HUMAN");
-
-            // --- story card 23: rush ability ---
-            boolean hasRush = (unit instanceof BetterUnit) && ((BetterUnit) unit).getHasRush();
-            // units without rush cannot move/attack on summoning turn
-            if (!hasRush){
-                gameState.unitHasMoved.put(unitId, true);
-                gameState.unitHadAttacked.put(unitId, true);
-            }
 
             // Story #17: opening gambit triggers right after summon
             OpeningGambitResolver.onSummoned(out, gameState, unit, card.getCardname());
@@ -339,7 +342,7 @@ public class TileClicked implements EventProcessor {
             BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
 
             // play effect on avatar tile
-            Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
+            Tile tile = @@BasicObjectBuilders.loadTile(tilex, tiley);
             EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
             if (fx != null) BasicCommands.playEffectAnimation(out, fx, tile);
 
@@ -546,3 +549,9 @@ public class TileClicked implements EventProcessor {
         return validTiles;
     }
 }
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: _empty_/BasicObjectBuilders#
