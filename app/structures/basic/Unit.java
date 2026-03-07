@@ -94,6 +94,17 @@ public class Unit {
 	public void setAnimations(UnitAnimationSet animations) {
 		this.animations = animations;
 	}
+
+	// ---- story card 23: rush ability ----
+	private boolean hasRush = false;
+
+	public boolean getHasRush(){
+		return hasRush;
+	}
+
+	public void setHasRush(boolean hasRush){
+		this.hasRush = hasRush;
+	}
 	
 	/**
 	 * This command sets the position of the Unit to a specified
