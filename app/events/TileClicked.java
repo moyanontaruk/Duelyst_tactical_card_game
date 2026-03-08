@@ -17,7 +17,7 @@ import utils.UnitDeathUtils;
 import utils.DestroySpellUtils;
 import utils.StunRules;
 
-//  new utils (you must create these two files)
+//  new utils 
 import utils.SummonUtils;
 import utils.OpeningGambitResolver;
 
@@ -28,6 +28,8 @@ import java.util.List;
 
 import utils.SpellTargetRules;
 import utils.DirectDamageSpellUtils;
+
+import utils.HealSpellUtils;
 
 
 public class TileClicked implements EventProcessor {
@@ -265,6 +267,35 @@ public class TileClicked implements EventProcessor {
         return;
         }
 
+
+        // ============================================================
+        // Spell: Sundrop Elixir (heal target unit by 5, capped at max health)
+        // ============================================================
+        if (name.equals("sundrop elixir")) {
+
+            Unit target = gameState.boardUnits.get(gameState.key(tilex, tiley));
+            if (target == null) return;
+
+            // spend mana
+            gameState.humanMana -= cost;
+            BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+
+            boolean applied = HealSpellUtils.healUnit(
+                    out,
+                    gameState,
+                    target,
+                    5,
+                    null,   // no owner restriction: any unit tile is allowed
+                    true,   // avatar can be healed too
+                    StaticConfFiles.f1_buff
+            );
+
+            if (!applied) return;
+
+            consumeSelectedCardAndClear(out, gameState, selectedPos);
+            return;
+        }
+
         // ============================================================
         // Spell: Beam Shock (stun enemy non-avatar unit)
         // ============================================================
@@ -389,6 +420,7 @@ public class TileClicked implements EventProcessor {
      * NOTE: Your current hand logic is "read from conf folder" (static), not real runtime deck.
      * I keep it as-is to avoid breaking your current tests/template.
      */
+    
     private List<String> getCurrentHumanHandConfigs() {
         File dir = new File("conf/gameconfs/cards/");
         String[] p1 = dir.list((d, name) -> name.startsWith("1_") && name.endsWith(".json"));
@@ -402,6 +434,28 @@ public class TileClicked implements EventProcessor {
         }
         return res;
     }
+    
+    /** 
+    //test #26
+    private List<String> getCurrentHumanHandConfigs() {
+    List<String> res = new ArrayList<>();
+
+    // temporary test hand
+    res.add("conf/gameconfs/cards/2_9_c_s_sundrop_elixir.json");
+
+    File dir = new File("conf/gameconfs/cards/");
+    String[] p1 = dir.list((d, name) -> name.startsWith("1_") && name.endsWith(".json"));
+    if (p1 == null) return res;
+
+    Arrays.sort(p1);
+
+    for (int i = 0; i < p1.length && res.size() < 6; i++) {
+        res.add("conf/gameconfs/cards/" + p1[i]);
+    }
+    return res;
+    }
+    */
+
 
     // helper for SC6 -Maggie
     private void clearMoveHighlights(ActorRef out, GameState gameState) {
