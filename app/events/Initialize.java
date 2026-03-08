@@ -129,6 +129,7 @@ public class Initialize implements EventProcessor {
         // ----------------------------------------------------
         // 4) Story #1: Draw 3 cards for human
         // ----------------------------------------------------
+       
         File dir = new File("conf/gameconfs/cards/");
         String[] p1 = dir.list((d, name) -> name.startsWith("1_") && name.endsWith(".json"));
 
@@ -145,6 +146,28 @@ public class Initialize implements EventProcessor {
                 }
             }
         }
+        
+
+        /** 
+        //test#26
+        String[] starterHand = new String[] {
+        "conf/gameconfs/cards/2_9_c_s_sundrop_elixir.json",
+        "conf/gameconfs/cards/1_1_c_u_bad_omen.json",
+        "conf/gameconfs/cards/1_2_c_s_hornoftheforsaken.json"
+        };
+
+        for (int i = 0; i < starterHand.length; i++) {
+            String cfg = starterHand[i];
+            int handPos = i + 1;
+            int cardId = 1000 + handPos;
+
+        Card c = BasicObjectBuilders.loadCard(cfg, cardId, Card.class);
+        if (c != null) {
+            BasicCommands.drawCard(out, c, handPos, 0);
+        }
+        }
+            */
+
     }
 
     // small UI sync delay

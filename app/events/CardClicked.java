@@ -66,7 +66,7 @@ public class CardClicked implements EventProcessor {
      * handPosition 1..3 -> first 3 sorted "1_*.json" cards.
      * Others -> null.
      */
-    /** 
+    
     private String getInitialHumanCardConfig(int handPosition) {
 
         if (handPosition < 1 || handPosition > 3) return null;
@@ -84,12 +84,17 @@ public class CardClicked implements EventProcessor {
 
         return "conf/gameconfs/cards/" + p1[idx];
     }
-
-    */
-
+    
+    /** 
+    //test #26
     private String getInitialHumanCardConfig(int handPosition) {
 
     if (handPosition < 1 || handPosition > 6) return null;
+
+    // temporary test: put Sundrop Elixir in slot 1
+    if (handPosition == 1) {
+        return "conf/gameconfs/cards/2_9_c_s_sundrop_elixir.json";
+    }
 
     File dir = new File("conf/gameconfs/cards/");
     String[] p1 = dir.list((d, name) ->
@@ -99,9 +104,10 @@ public class CardClicked implements EventProcessor {
 
     Arrays.sort(p1);
 
-    int idx = handPosition - 1;
-    if (idx >= p1.length) return null;
+    int idx = handPosition - 2; // because slot 1 is occupied by Sundrop now
+    if (idx < 0 || idx >= p1.length) return null;
 
     return "conf/gameconfs/cards/" + p1[idx];
     }
+    */
 }
