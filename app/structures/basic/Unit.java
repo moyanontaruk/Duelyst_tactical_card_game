@@ -25,6 +25,11 @@ public class Unit {
 	Position position;
 	UnitAnimationSet animations;
 	ImageCorrection correction;
+	int attack;
+	int health;
+	boolean canMove;
+	boolean canAttack;
+	boolean attackAfterMove;
 	
 	public Unit() {}
 	
@@ -115,6 +120,74 @@ public class Unit {
 	public void setPositionByTile(Tile tile) {
 		position = new Position(tile.getXpos(),tile.getYpos(),tile.getTilex(),tile.getTiley());
 	}
-	
+
+	public boolean isCanMove() {
+		return canMove;
+	}
+
+	public void setCanMove(boolean canMove) {
+		this.canMove = canMove;
+	}
+
+	public boolean isCanAttack() {
+		return canAttack;
+	}
+
+	public void setCanAttack(boolean canAttack) {
+		this.canAttack = canAttack;
+	}
+
+	public boolean isAttackAfterMove() {
+		return attackAfterMove;
+	}
+
+	public void setAttackAfterMove(boolean attackAfterMove) {
+		this.attackAfterMove = attackAfterMove;
+	}
+
+	public void attack(GameState gameState, ActorRef out,Unit enemy)
+	{
+		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
+		try {
+			Thread.sleep(600);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		enemy.health-=attack;
+		BasicCommands.setUnitHealth(out,enemy,enemy.health);
+		if (enemy.health<=0)
+		{
+			BasicCommands.playUnitAnimation(out,enemy,UnitAnimationType.death);
+			try {
+				Thread.sleep(600);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			BasicCommands.deleteUnit(out,enemy);
+		}else
+		{
+			BasicCommands.playUnitAnimation(out,enemy,UnitAnimationType.attack);
+			health-=enemy.attack;
+			try {
+				Thread.sleep(600);
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
+			BasicCommands.setUnitHealth(out,this,health);
+			if (health<=0)
+			{
+				BasicCommands.playUnitAnimation(out,this,UnitAnimationType.death);
+				try {
+					Thread.sleep(600);
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+				BasicCommands.deleteUnit(out,this);
+			}
+
+		}
+
+	}
+
 	
 }
