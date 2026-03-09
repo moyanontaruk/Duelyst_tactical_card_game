@@ -96,6 +96,46 @@ public class TileClicked implements EventProcessor {
 
             return;
         }
+
+        // SC 20 & Attack Logic
+        if (gameState.selectUnitId != -1) {
+                Unit attacker = gameState.uiUnitById.get(gameState.selectUnitId);
+                String targetKey = gameState.key(tilex, tiley);
+                Unit defender = gameState.boardUnits.get(targetKey);
+
+                if (defender != null && !"HUMAN".equals(gameState.unitOwner.get(defender.getId()))) {
+                    int atk = gameState.unitAttack.getOrDefault(attacker.getId(), 0);
+                    if (atk > 0) {
+                        int currentHp = gameState.unitHealth.getOrDefault(defender.getId(), 0);
+                        int newHp = currentHp - atk;
+                        UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, defender, newHp);
+                        
+                        gameState.unitHadAttacked.put(attacker.getId(), true);
+
+                        if (atk > 0) {
+                            if (gameState.hornOfForsaken && attacker.getId() == gameState.humanAvatarId) {
+                                summonWraithlingForHorn(out, gameState);
+                                
+                                gameState.hornRobustness--;
+                                if (gameState.hornRobustness <= 0) {
+                                    gameState.hornOfForsaken = false;
+                                    BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken broke!", 2);
+                                }
+                            }
+
+                            String attackerName = gameState.unitName.get(attacker.getId());
+                            if (attackerName != null && attackerName.contains("Fire Spitter")) {
+                                BasicCommands.addPlayer1Notification(out, attackerName + " triggered On Hit!", 2);
+                            }
+                        }
+                        // ============================================================
+                    }
+                    HighlightUtils.clearHighlightedTiles(out, gameState);
+                    return;
+                }
+            }
+
+
         //SC 6 done
 
 
@@ -599,4 +639,22 @@ public class TileClicked implements EventProcessor {
         }
         return validTiles;
     }
+    // SC 20 Helper: 
+    private void summonWraithlingForHorn(ActorRef out, GameState gameState) {
+        int ax = 1, ay = 2; 
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+                int sx = ax + dx;
+                int sy = ay + dy;
+                if (isOnBoard(sx, sy) && !gameState.boardUnits.containsKey(gameState.key(sx, sy))) {
+                    SummonUtils.spawnWraithling(out, gameState, sx, sy, "HUMAN");
+                    BasicCommands.addPlayer1Notification(out, "Horn triggered: Wraithling summoned!", 2);
+                    return;
+                }
+            }
+        }
+    }
+
+
 }
