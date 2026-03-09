@@ -64,6 +64,15 @@ public class TileClicked implements EventProcessor {
                     gameState.boardUnits.values().removeIf(v -> v.equals(select));
                     gameState.boardUnits.put(gameState.key(tilex, tiley),select);
                     gameState.selectUnitId=null;
+                }else if(gameState.highlightedTargetTiles.contains(clickedKey))
+                {
+                    Unit select = gameState.uiUnitById.get(gameState.selectUnitId);
+                    Unit enemy = gameState.boardUnits.get(clickedKey);
+                    select.attack(gameState,out,enemy);
+                    gameState.selectUnitId=null;
+                    clearMoveHighlights(out, gameState);
+                    HighlightUtils.clearHighlightedTiles(out,gameState);
+
                 }
             } else {
                 clearMoveHighlights(out, gameState);

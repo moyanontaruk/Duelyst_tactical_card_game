@@ -150,13 +150,20 @@ public class Unit {
 
 	public void attack(GameState gameState, ActorRef out, Unit enemy)
 	{
+		health= gameState.unitHealth.get(id);
+		enemy.health = gameState.unitHealth.get(enemy.id);
+		attack=gameState.unitAttack.get(id);
+		enemy.attack=gameState.unitAttack.get(enemy.id);
+
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
 		try {
 			Thread.sleep(600);
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.idle);
 		enemy.health-=attack;
+		gameState.unitHealth.put(enemy.id,enemy.health);
 		BasicCommands.setUnitHealth(out,enemy,enemy.health);
 		if (enemy.health<=0)
 		{
@@ -171,11 +178,13 @@ public class Unit {
 		{
 			BasicCommands.playUnitAnimation(out,enemy,UnitAnimationType.attack);
 			health-=enemy.attack;
+			gameState.unitHealth.put(id,health);
 			try {
 				Thread.sleep(600);
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
+			BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
 			BasicCommands.setUnitHealth(out,this,health);
 			if (health<=0)
 			{
