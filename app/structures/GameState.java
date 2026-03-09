@@ -67,6 +67,9 @@ public class GameState {
 
 	public final Map<Integer, Integer> unitMaxHealth = new HashMap<>();
 	public final Map<Integer, String> unitOwner = new HashMap<>();
+	
+	// SC 18:Specifically designed to record the names of monsters on the field
+    public final Map<Integer, String> unitName = new HashMap<>();
 
 	// SB6, SB7, SB9
 	//storing which unit the player has selected currently

@@ -54,6 +54,13 @@ public final class SummonUtils {
         gameState.unitMaxHealth.put(unitId, hp);
         gameState.unitOwner.put(unitId, owner);
 
+        // Add to SC18: Register name upon summoning
+        if (unitConfig.contains("bad_omen")) gameState.unitName.put(unitId, "Bad Omen");
+        else if (unitConfig.contains("shadow_watcher")) gameState.unitName.put(unitId, "Shadow Watcher");
+        else if (unitConfig.contains("shadowdancer")) gameState.unitName.put(unitId, "Shadowdancer");
+        else if (unitConfig.contains("bloodmoon_priestess")) gameState.unitName.put(unitId, "Bloodmoon Priestess");
+        else if (unitConfig.contains("wraithling")) gameState.unitName.put(unitId, "Wraithling");
+
         // --- story card 19 damage trigger ability ---
         // register Zeal units (Silverguard Knight)
         if (unitConfig != null && unitConfig.contains("silverguard_knight")){

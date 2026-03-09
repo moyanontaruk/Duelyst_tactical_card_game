@@ -164,6 +164,9 @@ public class TileClicked implements EventProcessor {
             gameState.unitMaxHealth.put(unitId, hp);
             gameState.unitOwner.put(unitId, "HUMAN");
 
+            //  Add to SC18: Record unit name upon summoning
+            gameState.unitName.put(unitId, card.getCardname());
+
             // --- story card 23: rush ability ---
             boolean hasRush = (unit instanceof BetterUnit) && ((BetterUnit) unit).getHasRush();
             // units without rush cannot move/attack on summoning turn
