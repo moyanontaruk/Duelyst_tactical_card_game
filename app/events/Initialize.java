@@ -34,6 +34,7 @@ public class Initialize implements EventProcessor {
         // Story #3: starting health = 20
         gameState.humanHealth = 20;
         gameState.aiHealth = 20;
+        gameState.humanMana=2;
 
         // (optional) if your project uses mana, keep defaults or reset
         // gameState.humanMana = 0;
@@ -125,6 +126,8 @@ public class Initialize implements EventProcessor {
         // ----------------------------------------------------
         BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
         BasicCommands.setPlayer2Health(out, new Player(gameState.aiHealth, gameState.aiMana));
+
+        BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
 
         // ----------------------------------------------------
         // 4) Story #1: Draw 3 cards for human
