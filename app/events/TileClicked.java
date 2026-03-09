@@ -52,49 +52,64 @@ public class TileClicked implements EventProcessor {
         boolean noCardSelected = (
                 gameState.selectedHandPos == null || gameState.selectedCardConfig == null);
         if (noCardSelected) {
-            clearMoveHighlights(out, gameState);
+            //Story 11 (Unit Action: Move)
+            if (gameState.selectUnitId != null) {
+                String clickedKey = gameState.key(tilex, tiley);
+                if(gameState.highlightedMovedTiles.contains(clickedKey))
+                {
+                    Unit select = gameState.uiUnitById.get(gameState.selectUnitId);
+                    Tile target = BasicObjectBuilders.loadTile(tilex, tiley);
 
-            // checks if the tile clicked has a unit
-            String clickedKey = gameState.key(tilex, tiley);
-            Unit clickedUnit = gameState.boardUnits.get(clickedKey);
+                    BasicCommands.moveUnitToTile(out, select, target, true);
+                    gameState.boardUnits.values().removeIf(v -> v.equals(select));
+                    gameState.boardUnits.put(gameState.key(tilex, tiley),select);
+                    gameState.selectUnitId=null;
+                }
+            } else {
+                clearMoveHighlights(out, gameState);
 
-            // if the tile is empty, nothing willbe highlighted
-            if (clickedUnit == null) return;
+                // checks if the tile clicked has a unit
+                String clickedKey = gameState.key(tilex, tiley);
+                Unit clickedUnit = gameState.boardUnits.get(clickedKey);
 
-            String owner = gameState.unitOwner.get(clickedUnit.getId());
-            if (!"HUMAN".equals(owner)) return;
+                // if the tile is empty, nothing willbe highlighted
+                if (clickedUnit == null) return;
 
-            int unitId = clickedUnit.getId();
+                String owner = gameState.unitOwner.get(clickedUnit.getId());
+                if (!"HUMAN".equals(owner)) return;
 
-            // constraints -- unit cannot have already attacked
-            boolean alreadyAttacked = gameState.unitHadAttacked.getOrDefault(unitId, false);
-            if (alreadyAttacked) {
-                BasicCommands.addPlayer1Notification(
-                        out,
-                        // message showing to player and there will be mo highlighted tile
-                        "This unit already attacked.", 2);
+                int unitId = clickedUnit.getId();
+
+                // constraints -- unit cannot have already attacked
+                boolean alreadyAttacked = gameState.unitHadAttacked.getOrDefault(unitId, false);
+                if (alreadyAttacked) {
+                    BasicCommands.addPlayer1Notification(
+                            out,
+                            // message showing to player and there will be mo highlighted tile
+                            "This unit already attacked.", 2);
+                    return;
+                }
+
+                // cant have already moved
+                boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(unitId, false);
+                if (alreadyMoved) {
+                    BasicCommands.addPlayer1Notification(out, "This unit already moved.", 2);
+                    return;
+                }
+
+                //storing which unit is selected
+                gameState.selectUnitId = unitId;
+
+                if (StunRules.rejectIfStunned(out, gameState, unitId)) {
+                    return;
+                }
+
+                List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
+
+                highlightMoveTilesWhite(out, gameState, reachable);
+
                 return;
             }
-
-            // cant have already moved
-            boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(unitId, false);
-            if (alreadyMoved) {
-                BasicCommands.addPlayer1Notification(out, "This unit already moved.", 2);
-                return;
-            }
-
-            //storing which unit is selected
-            gameState.selectUnitId = unitId;
-
-            if (StunRules.rejectIfStunned(out, gameState, unitId)) {
-            return;
-            }
-
-            List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
-
-            highlightMoveTilesWhite(out, gameState, reachable);
-
-            return;
         }
         //SC 6 done
 
