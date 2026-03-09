@@ -2,6 +2,9 @@ package structures.basic;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import commands.BasicCommands;
+import structures.GameState;
+import akka.actor.ActorRef;
 
 /**
  * This is a representation of a Unit on the game board.
@@ -145,7 +148,7 @@ public class Unit {
 		this.attackAfterMove = attackAfterMove;
 	}
 
-	public void attack(GameState gameState, ActorRef out,Unit enemy)
+	public void attack(GameState gameState, ActorRef out, Unit enemy)
 	{
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
 		try {
