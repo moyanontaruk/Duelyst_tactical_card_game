@@ -86,8 +86,8 @@ public class GameState {
 
 // ---- Story Card 14 damage/healing ----
 	// avatar tracking
-	public Integer humanAvatarId = null;
-	public Integer aiAvatarId = null;
+	public Integer humanAvatarId = 0;
+	public Integer aiAvatarId = 1;
 
 	// apply damage to unit
 	public void applyDamageToUnit(int unitId, int amount){
