@@ -9,6 +9,7 @@ import structures.GameState;
 import structures.basic.Tile;
 import structures.basic.Unit;
 import utils.BasicObjectBuilders;
+import utils.HighlightUtils;
 
 /**
  * Indicates that a unit instance has stopped moving. 
@@ -30,6 +31,7 @@ public class UnitStopped implements EventProcessor{
 		int unitid = message.get("id").asInt();
 		Unit moveUnit = gameState.uiUnitById.get(unitid);
 		clearMoveHighlights(out,gameState);
+		HighlightUtils.clearHighlightedTiles(out,gameState);
 	}
 	private void clearMoveHighlights(ActorRef out, GameState gameState) {
 		if (gameState.highlightedMovedTiles.isEmpty()) return;
