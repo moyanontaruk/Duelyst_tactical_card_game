@@ -5,7 +5,9 @@ import commands.BasicCommands;
 import structures.GameState;
 import structures.basic.Card;
 import structures.basic.Tile;
+import structures.basic.Unit;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -75,4 +77,50 @@ public final class HighlightUtils {
         clearCardSelection(out, gameState);
         clearHighlightedTiles(out, gameState);
     }
+    // Returns enemy-occupied tiles surrounding the given coordinates based on player type
+    public static List<int[]> getEnemyTiles(int x, int y,boolean isHuman,GameState gameState)
+    {
+        List<int[]> surroundingTiles = getSurroundingTiles(x,y);
+        List<int[]> result =new ArrayList<>();
+        for (int[] tile : surroundingTiles) {
+            Unit unit = gameState.boardUnits.get(gameState.key(tile[0],tile[1]));
+            if (unit!=null)
+            {
+                if(isHuman&&unit.getId()>=200)
+                {
+                    result.add(tile);
+                }
+            }
+        }
+        return result;
+    }
+    // Generates all valid adjacent tiles within 9x5 board boundaries (8 directions)
+    private static List<int[]> getSurroundingTiles(int x, int y) {
+        List<int[]> surroundingTiles = new ArrayList<>();
+
+        // Define the 8 possible directions (including diagonals)
+        int[][] directions = {
+                {0, 1},
+                {0, -1},
+                {-1, 0},
+                {1, 0},
+                {-1, 1},
+                {1, 1},
+                {-1, -1},
+                {1, -1}
+        };
+
+        for (int[] dir : directions) {
+            int newX = x + dir[0];
+            int newY = y + dir[1];
+
+            // Check if the new coordinates are within the board boundaries
+            if (newX >= 0 && newX < 9 && newY >= 0 && newY < 5) {
+                // Add the surrounding tile to the list
+                surroundingTiles.add(new int[]{newX,newY});
+            }
+        }
+        return surroundingTiles;
+    }
+
 }

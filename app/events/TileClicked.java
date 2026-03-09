@@ -107,6 +107,8 @@ public class TileClicked implements EventProcessor {
                 List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
 
                 highlightMoveTilesWhite(out, gameState, reachable);
+                List<int[]> attackable = HighlightUtils.getEnemyTiles(tilex,tiley,true,gameState);
+                HighlightUtils.highlightTilesRed(out,gameState,attackable);
 
                 return;
             }
@@ -617,4 +619,5 @@ public class TileClicked implements EventProcessor {
         }
         return validTiles;
     }
+
 }
