@@ -76,18 +76,45 @@ public final class HighlightUtils {
     public static void clearSelectionAndHighlights(ActorRef out, GameState gameState) {
         clearCardSelection(out, gameState);
         clearHighlightedTiles(out, gameState);
+
+        //clear the current selected board unit id
+        gameState.selectUnitId = null;
+
+        if (out != null && gameState != null && !gameState.highlightedMovedTiles.isEmpty()) {
+            for (String key : gameState.highlightedMovedTiles) {
+
+                String[] parts = key.split(",");
+                if (parts.length != 2)
+                    continue;
+                try {
+                    int x = Integer.parseInt(parts[0]);
+                    int y = Integer.parseInt(parts[1]);
+
+                    Tile tile = BasicObjectBuilders.loadTile(x, y);
+
+                    BasicCommands.drawTile(out, tile, 0);
+                } catch (NumberFormatException ignored) {
+                }
+            }
+            //clear the stored white moved highlight key from gamestate
+            gameState.highlightedMovedTiles.clear();
+        }
     }
+
     // Returns enemy-occupied tiles surrounding the given coordinates based on player type
-    public static List<int[]> getEnemyTiles(int x, int y,boolean isHuman,GameState gameState)
-    {
+    public static List<int[]> getEnemyTiles(int x, int y,boolean isHuman,GameState gameState) {
         List<int[]> surroundingTiles = getSurroundingTiles(x,y);
         List<int[]> result =new ArrayList<>();
+
+        //decide which owner string counts as enemy
+        String enemyOwner = isHuman ? "AI" : "HUMAN";
+
         for (int[] tile : surroundingTiles) {
             Unit unit = gameState.boardUnits.get(gameState.key(tile[0],tile[1]));
-            if (unit!=null)
-            {
-                if(isHuman&&unit.getId()>=200)
-                {
+            if (unit!=null) {
+
+                String owner = gameState.unitOwner.get(unit.getId());
+                if(enemyOwner.equals(owner)) {
                     result.add(tile);
                 }
             }
