@@ -5,7 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import commands.BasicCommands;
 import structures.GameState;
 import akka.actor.ActorRef;
-
+import utils.UnitDeathUtils;
 /**
  * This is a representation of a Unit on the game board.
  * A unit has a unique id (this is used by the front-end.
@@ -148,12 +148,25 @@ public class Unit {
 		this.attackAfterMove = attackAfterMove;
 	}
 
-	public void attack(GameState gameState, ActorRef out, Unit enemy)
-	{
+	// correction to attack () needed -- adding UnitDeathUtils - Maggie
+	public void attack(
+			GameState gameState,
+			ActorRef out,
+			Unit enemy){
 		health= gameState.unitHealth.get(id);
 		enemy.health = gameState.unitHealth.get(enemy.id);
 		attack=gameState.unitAttack.get(id);
 		enemy.attack=gameState.unitAttack.get(enemy.id);
+
+
+		//debug - Maggie
+		//record that the current unit has attacked this turn
+		gameState.unitHadAttacked.put(id,true);
+
+		//if unit attacks before moving, it'll lost the change to move later
+		gameState.unitHasMoved.put(id,true);
+
+
 
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
 		try {
