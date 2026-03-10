@@ -124,6 +124,8 @@ public class TileClicked implements EventProcessor {
 
             // checks if the tile clicked has a unit
             else {
+                clearMoveHighlights(out, gameState);
+                HighlightUtils.clearHighlightedTiles(out, gameState);
                 Unit clickedUnit = gameState.boardUnits.get(clickedKey);
 
                 // if the tile is empty, nothing willbe highlighted
