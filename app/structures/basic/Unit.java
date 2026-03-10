@@ -162,8 +162,12 @@ public class Unit {
 		//record that the current unit has attacked this turn
 		gameState.unitHadAttacked.put(id,true);
 
+
+
+		//sc 10...
 		//if unit attacks before moving, it'll lost the change to move later
-		gameState.unitHasMoved.put(id,true);
+		//gameState.unitHasMoved.put(id,true);
+
 
 
 
