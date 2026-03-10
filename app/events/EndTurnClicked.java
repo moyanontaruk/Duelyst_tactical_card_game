@@ -12,6 +12,7 @@ import utils.StunRules;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Map;
 
 public class EndTurnClicked implements EventProcessor {
 
@@ -69,6 +70,11 @@ public class EndTurnClicked implements EventProcessor {
 
 		String next = gameState.activePlayer;
 
+		// debug reset move/attack flags for the player whos new turn is starting - Maggie
+		resetActionsForPlayer(gameState, next);
+
+
+
 		// ----------------------------------------------------
 		// Story #4: Mana Gain = turnNumber + 1 (and update UI) for next player
 		// ----------------------------------------------------
@@ -116,4 +122,24 @@ public class EndTurnClicked implements EventProcessor {
 
 		return "conf/gameconfs/cards/" + p1[idx];
 	}
-}
+
+
+	// helper method, resets each turn action flags for all units for that player whos
+	//turn is starting
+	private void resetActionsForPlayer(GameState gameState, String playerOwner){
+
+		// will interates thru every entry in the map
+		for (Map.Entry<Integer, String> entry: gameState.unitOwner.entrySet()){
+			Integer unitId = entry.getKey();
+			String owner = entry.getValue();
+
+			//only resets unit for the player thats starting their turn
+			if (!playerOwner.equals(owner)) {
+				continue;
+			}
+			//false = unit is fresh for the new turn
+			gameState.unitHasMoved.put(unitId, false);
+			gameState.unitHadAttacked.put(unitId,false);
+		}
+	}
+	}
