@@ -158,7 +158,6 @@ public class Unit {
 		attack=gameState.unitAttack.get(id);
 		enemy.attack=gameState.unitAttack.get(enemy.id);
 
-
 		//debug - Maggie
 		//record that the current unit has attacked this turn
 		gameState.unitHadAttacked.put(id,true);
