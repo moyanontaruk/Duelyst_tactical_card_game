@@ -44,4 +44,34 @@ public final class SimpleAI {
         // 4) finish AI turn
         endAiTurn(out, gameState);
     }
+     // ------------------------------------------------------------
+    // TURN END
+    // ------------------------------------------------------------
+
+    private static void endAiTurn(ActorRef out, GameState gameState) {
+        if (gameState.gameOver) return;
+
+        // drain AI mana
+        gameState.aiMana = 0;
+        BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+
+        // switch back to human
+        gameState.activePlayer = "HUMAN";
+        gameState.turnNumber += 1;
+
+        int manaForHuman = gameState.turnNumber + 1;
+        gameState.humanMana = manaForHuman;
+        BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+
+        resetUnitsForTurn(gameState, "HUMAN");
+    }
+        private static void resetUnitsForTurn(GameState gameState, String owner) {
+        for (Integer unitId : new ArrayList<>(gameState.unitOwner.keySet())) {
+            String uOwner = gameState.unitOwner.get(unitId);
+            if (owner.equals(uOwner)) {
+                gameState.unitHasMoved.put(unitId, false);
+                gameState.unitHadAttacked.put(unitId, false);
+            }
+        }
+    }
 }
