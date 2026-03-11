@@ -203,11 +203,11 @@ public final class SimpleAI {
     // MOVEMENT
     // ------------------------------------------------------------
 
-    private static void moveAllUnitsTowardEnemy(ActorRef out, GameState gameState) {
+       private static void moveAllUnitsTowardEnemy(ActorRef out, GameState gameState) {
         List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
 
         for (Unit unit : aiUnits) {
-            
+            if (unit == null) continue;
             if (gameState.gameOver) return;
 
             int id = unit.getId();
@@ -222,7 +222,7 @@ public final class SimpleAI {
             // if already adjacent to enemy, don't move
             if (findAdjacentEnemy(gameState, unit, "HUMAN") != null) continue;
 
-            
+            int[] step = chooseBestMoveTile(gameState, unit);
             if (step == null) continue;
 
             moveUnit(out, gameState, unit, step[0], step[1]);
@@ -262,6 +262,13 @@ public final class SimpleAI {
                 {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
         };
 
+        for (int[] d : diag) {
+            int tx = ux + d[0];
+            int ty = uy + d[1];
+            if (isOnBoard(tx, ty) && !occupied(gameState, tx, ty)) {
+                moves.add(new int[]{tx, ty});
+            }
+        }
 
         if (moves.isEmpty()) return null;
 
@@ -275,5 +282,20 @@ public final class SimpleAI {
         return moves.get(0);
     }
 
+    private static void moveUnit(ActorRef out, GameState gameState, Unit unit, int toX, int toY) {
+        int id = unit.getId();
+        String oldKey = gameState.unitPositionKey.get(id);
+        if (oldKey != null) {
+            gameState.boardUnits.remove(oldKey);
+        }
+
+        Tile dest = BasicObjectBuilders.loadTile(toX, toY);
+        BasicCommands.moveUnitToTile(out, unit, dest);
+        unit.setPositionByTile(dest);
+
+        String newKey = gameState.key(toX, toY);
+        gameState.boardUnits.put(newKey, unit);
+        gameState.unitPositionKey.put(id, newKey);
+    }
 }
 
