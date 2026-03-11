@@ -301,7 +301,7 @@ public final class SimpleAI {
     // ATTACKING
     // ------------------------------------------------------------
 
-    private static void attackAllPossible(ActorRef out, GameState gameState) {
+      private static void attackAllPossible(ActorRef out, GameState gameState) {
         List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
 
         for (Unit attacker : aiUnits) {
@@ -320,6 +320,7 @@ public final class SimpleAI {
             sleep(250);
         }
     }
+
     private static void performAttack(ActorRef out, GameState gameState, Unit attacker, Unit defender) {
         if (attacker == null || defender == null) return;
 
@@ -353,6 +354,21 @@ public final class SimpleAI {
         UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, attacker, attackerAfter);
 
         checkGameOver(out, gameState);
+    }
+
+    private static void checkGameOver(ActorRef out, GameState gameState) {
+        if (gameState.humanHealth <= 0) {
+            gameState.gameOver = true;
+            gameState.winner = "AI";
+            BasicCommands.addPlayer1Notification(out, "AI wins!", 5);
+            return;
+        }
+
+        if (gameState.aiHealth <= 0) {
+            gameState.gameOver = true;
+            gameState.winner = "HUMAN";
+            BasicCommands.addPlayer1Notification(out, "You win!", 5);
+        }
     }
 
 
