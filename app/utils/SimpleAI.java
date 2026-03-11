@@ -297,5 +297,184 @@ public final class SimpleAI {
         gameState.boardUnits.put(newKey, unit);
         gameState.unitPositionKey.put(id, newKey);
     }
+    // ------------------------------------------------------------
+    // ATTACKING
+    // ------------------------------------------------------------
+
+      private static void attackAllPossible(ActorRef out, GameState gameState) {
+        List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
+
+        for (Unit attacker : aiUnits) {
+            if (attacker == null) continue;
+            if (gameState.gameOver) return;
+
+            int attackerId = attacker.getId();
+            if (gameState.unitHadAttacked.getOrDefault(attackerId, false)) continue;
+
+            Unit target = findAdjacentEnemy(gameState, attacker, "HUMAN");
+            if (target == null) continue;
+
+            performAttack(out, gameState, attacker, target);
+            gameState.unitHadAttacked.put(attackerId, true);
+
+            sleep(250);
+        }
+    }
+
+    private static void performAttack(ActorRef out, GameState gameState, Unit attacker, Unit defender) {
+        if (attacker == null || defender == null) return;
+
+        int attackerId = attacker.getId();
+        int defenderId = defender.getId();
+
+        int atk = gameState.unitAttack.getOrDefault(attackerId, 0);
+        int defAtk = gameState.unitAttack.getOrDefault(defenderId, 0);
+
+        int defHp = gameState.unitHealth.getOrDefault(defenderId, 0);
+
+        BasicCommands.playUnitAnimation(out, attacker, UnitAnimationType.attack);
+
+        int defenderAfter = defHp - atk;
+        UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, defender, defenderAfter);
+
+        checkGameOver(out, gameState);
+        if (gameState.gameOver) return;
+
+        // if defender survived and is still adjacent -> counterattack
+        boolean defenderAlive = gameState.uiUnitById.containsKey(defenderId);
+        if (!defenderAlive) return;
+
+        if (!isAdjacent(attacker, defender)) return;
+
+        int attHp = gameState.unitHealth.getOrDefault(attackerId, 0);
+
+        BasicCommands.playUnitAnimation(out, defender, UnitAnimationType.attack);
+
+        int attackerAfter = attHp - defAtk;
+        UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, attacker, attackerAfter);
+
+        checkGameOver(out, gameState);
+    }
+
+    private static void checkGameOver(ActorRef out, GameState gameState) {
+        if (gameState.humanHealth <= 0) {
+            gameState.gameOver = true;
+            gameState.winner = "AI";
+            BasicCommands.addPlayer1Notification(out, "AI wins!", 5);
+            return;
+        }
+
+        if (gameState.aiHealth <= 0) {
+            gameState.gameOver = true;
+            gameState.winner = "HUMAN";
+            BasicCommands.addPlayer1Notification(out, "You win!", 5);
+        }
+    }
+
+       // ------------------------------------------------------------
+    // TARGETING HELPERS
+    // ------------------------------------------------------------
+
+     private static Unit findAdjacentEnemy(GameState gameState, Unit unit, String enemyOwner) {
+        int x = unit.getPosition().getTilex();
+        int y = unit.getPosition().getTiley();
+
+        Unit best = null;
+        int bestHp = Integer.MAX_VALUE;
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int tx = x + dx;
+                int ty = y + dy;
+                if (!isOnBoard(tx, ty)) continue;
+
+                Unit other = gameState.boardUnits.get(gameState.key(tx, ty));
+                if (other == null) continue;
+
+                String owner = gameState.unitOwner.get(other.getId());
+                if (!enemyOwner.equals(owner)) continue;
+
+                int hp = gameState.unitHealth.getOrDefault(other.getId(), 999);
+                if (hp < bestHp) {
+                    bestHp = hp;
+                    best = other;
+                }
+            }
+        }
+        return best;
+    }
+
+    private static Unit nearestEnemyUnit(GameState gameState, int x, int y, String enemyOwner) {
+        Unit best = null;
+        int bestDist = Integer.MAX_VALUE;
+
+        for (Unit u : gameState.boardUnits.values()) {
+            if (u == null) continue;
+
+            String owner = gameState.unitOwner.get(u.getId());
+            if (!enemyOwner.equals(owner)) continue;
+
+            int ux = u.getPosition().getTilex();
+            int uy = u.getPosition().getTiley();
+            int dist = manhattan(x, y, ux, uy);
+
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = u;
+            }
+        }
+
+        return best;
+    }
+
+    private static List<Unit> getUnitsOwnedBy(GameState gameState, String owner) {
+        List<Unit> res = new ArrayList<>();
+        for (Unit u : gameState.boardUnits.values()) {
+            if (u == null) continue;
+            String uOwner = gameState.unitOwner.get(u.getId());
+            if (owner.equals(uOwner)) {
+                res.add(u);
+            }
+        }
+        return res;
+    }
+
+    private static boolean occupied(GameState gameState, int x, int y) {
+        return gameState.boardUnits.containsKey(gameState.key(x, y));
+    }
+
+    private static boolean isAdjacent(Unit a, Unit b) {
+        int ax = a.getPosition().getTilex();
+        int ay = a.getPosition().getTiley();
+        int bx = b.getPosition().getTilex();
+        int by = b.getPosition().getTiley();
+
+        int dx = Math.abs(ax - bx);
+        int dy = Math.abs(ay - by);
+
+        return dx <= 1 && dy <= 1 && !(dx == 0 && dy == 0);
+    }
+
+    private static boolean isOnBoard(int x, int y) {
+        return x >= 0 && x < 9 && y >= 0 && y < 5;
+    }
+
+    private static int manhattan(int x1, int y1, int x2, int y2) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
+
+    private static String normalize(String s) {
+        return (s == null) ? "" : s.trim().toLowerCase();
+    }
+
+    private static void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+        }
+    }
+
 }
 
