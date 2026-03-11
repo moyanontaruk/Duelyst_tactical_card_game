@@ -65,4 +65,13 @@ public final class SimpleAI {
 
         resetUnitsForTurn(gameState, "HUMAN");
     }
+        private static void resetUnitsForTurn(GameState gameState, String owner) {
+        for (Integer unitId : new ArrayList<>(gameState.unitOwner.keySet())) {
+            String uOwner = gameState.unitOwner.get(unitId);
+            if (owner.equals(uOwner)) {
+                gameState.unitHasMoved.put(unitId, false);
+                gameState.unitHadAttacked.put(unitId, false);
+            }
+        }
+    }
 }
