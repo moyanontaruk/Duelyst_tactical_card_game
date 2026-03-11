@@ -375,7 +375,7 @@ public final class SimpleAI {
     // TARGETING HELPERS
     // ------------------------------------------------------------
 
-    private static Unit findAdjacentEnemy(GameState gameState, Unit unit, String enemyOwner) {
+     private static Unit findAdjacentEnemy(GameState gameState, Unit unit, String enemyOwner) {
         int x = unit.getPosition().getTilex();
         int y = unit.getPosition().getTiley();
 
@@ -429,6 +429,52 @@ public final class SimpleAI {
         return best;
     }
 
+    private static List<Unit> getUnitsOwnedBy(GameState gameState, String owner) {
+        List<Unit> res = new ArrayList<>();
+        for (Unit u : gameState.boardUnits.values()) {
+            if (u == null) continue;
+            String uOwner = gameState.unitOwner.get(u.getId());
+            if (owner.equals(uOwner)) {
+                res.add(u);
+            }
+        }
+        return res;
+    }
+
+    private static boolean occupied(GameState gameState, int x, int y) {
+        return gameState.boardUnits.containsKey(gameState.key(x, y));
+    }
+
+    private static boolean isAdjacent(Unit a, Unit b) {
+        int ax = a.getPosition().getTilex();
+        int ay = a.getPosition().getTiley();
+        int bx = b.getPosition().getTilex();
+        int by = b.getPosition().getTiley();
+
+        int dx = Math.abs(ax - bx);
+        int dy = Math.abs(ay - by);
+
+        return dx <= 1 && dy <= 1 && !(dx == 0 && dy == 0);
+    }
+
+    private static boolean isOnBoard(int x, int y) {
+        return x >= 0 && x < 9 && y >= 0 && y < 5;
+    }
+
+    private static int manhattan(int x1, int y1, int x2, int y2) {
+        return Math.abs(x1 - x2) + Math.abs(y1 - y2);
+    }
+
+    private static String normalize(String s) {
+        return (s == null) ? "" : s.trim().toLowerCase();
+    }
+
+    private static void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+        }
+    }
 
 }
 
