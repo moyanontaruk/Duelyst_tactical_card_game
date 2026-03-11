@@ -13,6 +13,7 @@ import utils.StunRules;
 import java.io.File;
 import java.util.Arrays;
 import java.util.Map;
+import utils.SimpleAI;
 
 public class EndTurnClicked implements EventProcessor {
 
@@ -81,11 +82,14 @@ public class EndTurnClicked implements EventProcessor {
 		int manaForThisTurn = gameState.turnNumber + 1;
 
 		if ("HUMAN".equals(next)) {
-			gameState.humanMana = manaForThisTurn;
-			BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+    	gameState.humanMana = manaForThisTurn;
+   	 	BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
 		} else {
-			gameState.aiMana = manaForThisTurn;
-			BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+    	gameState.aiMana = manaForThisTurn;
+    	BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+
+    	// let AI play immediately
+    	SimpleAI.takeTurn(out, gameState);
 		}
 	}
 
