@@ -74,4 +74,108 @@ public final class SimpleAI {
             }
         }
     }
+    // ------------------------------------------------------------
+    // SUMMONING
+    // ------------------------------------------------------------
+
+    private static boolean trySummonBestAffordableUnit(ActorRef out, GameState gameState) {
+        List<String> aiCards = getAiCardConfigs();
+        if (aiCards.isEmpty()) return false;
+
+        List<String> affordableUnits = new ArrayList<>();
+        for (String cfg : aiCards) {
+            Card c = BasicObjectBuilders.loadCard(cfg, 9000, Card.class);
+            if (c == null) continue;
+            if (!c.isCreature()) continue;
+            if (c.getManacost() > gameState.aiMana) continue;
+            affordableUnits.add(cfg);
+        }
+
+        if (affordableUnits.isEmpty()) return false;
+
+        // prefer highest mana cost first
+        affordableUnits.sort((a, b) -> {
+            Card ca = BasicObjectBuilders.loadCard(a, 9001, Card.class);
+            Card cb = BasicObjectBuilders.loadCard(b, 9002, Card.class);
+            int ma = (ca == null) ? -1 : ca.getManacost();
+            int mb = (cb == null) ? -1 : cb.getManacost();
+            return Integer.compare(mb, ma);
+        });
+
+        for (String cfg : affordableUnits) {
+            Card card = BasicObjectBuilders.loadCard(cfg, 9003, Card.class);
+            if (card == null) continue;
+
+            int[] tile = chooseBestSummonTile(gameState, card);
+            if (tile == null) continue;
+
+            Unit unit = SummonUtils.spawnUnit(
+                    out,
+                    gameState,
+                    card.getUnitConfig(),
+                    card.getBigCard().getAttack()
+                    "AI"
+            );
+
+            if (unit == null) continue;
+
+            gameState.aiMana -= card.getManacost();
+            BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+
+            // newly summoned units should not act immediately in this baseline AI
+            gameState.unitHasMoved.put(unit.getId(), true);
+            gameState.unitHadAttacked.put(unit.getId(), true);
+
+            OpeningGambitResolver.onSummoned(out, gameState, unit, card.getCardname());
+            return true;
+        }
+
+        return false;
+    }
+
+    private static int[] chooseBestSummonTile(GameState gameState, Card card) {
+        List<int[]> candidates = new ArrayList<>();
+
+        // Special case: Ironcliff Guardian can be summoned anywhere
+        String name = normalize(card.getCardname());
+
+        if (summonAnywhere) {
+            for (int x = 0; x < 9; x++) {
+                for (int y = 0; y < 5; y++) {
+                    if (!gameState.boardUnits.containsKey(gameState.key(x, y))) {
+                        candidates.add(new int[]{x, y});
+                    }
+                }
+            }
+        } else {
+            for (String key : gameState.boardUnits.keySet()) {
+                Unit u = gameState.boardUnits.get(key);
+                if (u == null) continue;
+
+                int ux = u.getPosition().getTilex();
+
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dy = -1; dy <= 1; dy++) {
+                        if (dx == 0 && dy == 0) continue;
+
+                        int tx = ux + dx;
+                        int ty = uy + dy;
+                        if (!isOnBoard(tx, ty)) continue;
+                        if (gameState.boardUnits.containsKey(gameState.key(tx, ty))) continue;
+
+                        
+                    }
+                }
+            }
+        }
+
+
+        // prefer tiles closer to human avatar
+        candidates.sort(Comparator.comparingInt(t ->
+                manhattan(t[0], t[1], 1, 2)
+        ));
+
+        return candidates.get(0);
+    }
+
 }
