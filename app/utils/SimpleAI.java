@@ -297,5 +297,64 @@ public final class SimpleAI {
         gameState.boardUnits.put(newKey, unit);
         gameState.unitPositionKey.put(id, newKey);
     }
+    // ------------------------------------------------------------
+    // ATTACKING
+    // ------------------------------------------------------------
+
+    private static void attackAllPossible(ActorRef out, GameState gameState) {
+        List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
+
+        for (Unit attacker : aiUnits) {
+            if (attacker == null) continue;
+            if (gameState.gameOver) return;
+
+            int attackerId = attacker.getId();
+            if (gameState.unitHadAttacked.getOrDefault(attackerId, false)) continue;
+
+            Unit target = findAdjacentEnemy(gameState, attacker, "HUMAN");
+            if (target == null) continue;
+
+            performAttack(out, gameState, attacker, target);
+            gameState.unitHadAttacked.put(attackerId, true);
+
+            sleep(250);
+        }
+    }
+    private static void performAttack(ActorRef out, GameState gameState, Unit attacker, Unit defender) {
+        if (attacker == null || defender == null) return;
+
+        int attackerId = attacker.getId();
+        int defenderId = defender.getId();
+
+        int atk = gameState.unitAttack.getOrDefault(attackerId, 0);
+        int defAtk = gameState.unitAttack.getOrDefault(defenderId, 0);
+
+        int defHp = gameState.unitHealth.getOrDefault(defenderId, 0);
+
+        BasicCommands.playUnitAnimation(out, attacker, UnitAnimationType.attack);
+
+        int defenderAfter = defHp - atk;
+        UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, defender, defenderAfter);
+
+        checkGameOver(out, gameState);
+        if (gameState.gameOver) return;
+
+        // if defender survived and is still adjacent -> counterattack
+        boolean defenderAlive = gameState.uiUnitById.containsKey(defenderId);
+        if (!defenderAlive) return;
+
+        if (!isAdjacent(attacker, defender)) return;
+
+        int attHp = gameState.unitHealth.getOrDefault(attackerId, 0);
+
+        BasicCommands.playUnitAnimation(out, defender, UnitAnimationType.attack);
+
+        int attackerAfter = attHp - defAtk;
+        UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, attacker, attackerAfter);
+
+        checkGameOver(out, gameState);
+    }
+
+
 }
 
