@@ -199,4 +199,103 @@ public final class SimpleAI {
         return res;
     }
 
+    // ------------------------------------------------------------
+    // MOVEMENT
+    // ------------------------------------------------------------
+
+       private static void moveAllUnitsTowardEnemy(ActorRef out, GameState gameState) {
+        List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
+
+        for (Unit unit : aiUnits) {
+            if (unit == null) continue;
+            if (gameState.gameOver) return;
+
+            int id = unit.getId();
+
+            if (id == gameState.aiAvatarId) {
+                // allow avatar to move too if you want; keep it simple for now
+            }
+
+            if (gameState.unitHasMoved.getOrDefault(id, false)) continue;
+            if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
+
+            // if already adjacent to enemy, don't move
+            if (findAdjacentEnemy(gameState, unit, "HUMAN") != null) continue;
+
+            int[] step = chooseBestMoveTile(gameState, unit);
+            if (step == null) continue;
+
+            moveUnit(out, gameState, unit, step[0], step[1]);
+            gameState.unitHasMoved.put(id, true);
+
+            sleep(300);
+        }
+    }
+
+    private static int[] chooseBestMoveTile(GameState gameState, Unit unit) {
+        int ux = unit.getPosition().getTilex();
+        int uy = unit.getPosition().getTiley();
+
+        List<int[]> moves = new ArrayList<>();
+
+        // cardinal up to 2
+        int[][] dirs = {
+                {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+        };
+
+        for (int[] d : dirs) {
+            int x1 = ux + d[0];
+            int y1 = uy + d[1];
+            if (isOnBoard(x1, y1) && !occupied(gameState, x1, y1)) {
+                moves.add(new int[]{x1, y1});
+
+                int x2 = ux + 2 * d[0];
+                int y2 = uy + 2 * d[1];
+                if (isOnBoard(x2, y2) && !occupied(gameState, x2, y2)) {
+                    moves.add(new int[]{x2, y2});
+                }
+            }
+        }
+
+        // diagonals by 1
+        int[][] diag = {
+                {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+        };
+
+        for (int[] d : diag) {
+            int tx = ux + d[0];
+            int ty = uy + d[1];
+            if (isOnBoard(tx, ty) && !occupied(gameState, tx, ty)) {
+                moves.add(new int[]{tx, ty});
+            }
+        }
+
+        if (moves.isEmpty()) return null;
+
+        Unit nearestHuman = nearestEnemyUnit(gameState, ux, uy, "HUMAN");
+        if (nearestHuman == null) return null;
+
+        int hx = nearestHuman.getPosition().getTilex();
+        int hy = nearestHuman.getPosition().getTiley();
+
+        moves.sort(Comparator.comparingInt(m -> manhattan(m[0], m[1], hx, hy)));
+        return moves.get(0);
+    }
+
+    private static void moveUnit(ActorRef out, GameState gameState, Unit unit, int toX, int toY) {
+        int id = unit.getId();
+        String oldKey = gameState.unitPositionKey.get(id);
+        if (oldKey != null) {
+            gameState.boardUnits.remove(oldKey);
+        }
+
+        Tile dest = BasicObjectBuilders.loadTile(toX, toY);
+        BasicCommands.moveUnitToTile(out, unit, dest);
+        unit.setPositionByTile(dest);
+
+        String newKey = gameState.key(toX, toY);
+        gameState.boardUnits.put(newKey, unit);
+        gameState.unitPositionKey.put(id, newKey);
+    }
 }
+
