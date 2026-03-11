@@ -113,7 +113,9 @@ public final class SimpleAI {
                     out,
                     gameState,
                     card.getUnitConfig(),
-                    card.getBigCard().getAttack()
+                    tile[0], tile[1],
+                    card.getBigCard().getAttack(),
+                    card.getBigCard().getHealth(),
                     "AI"
             );
 
@@ -138,6 +140,7 @@ public final class SimpleAI {
 
         // Special case: Ironcliff Guardian can be summoned anywhere
         String name = normalize(card.getCardname());
+        boolean summonAnywhere = name.equals("ironcliff guardian");
 
         if (summonAnywhere) {
             for (int x = 0; x < 9; x++) {
@@ -152,7 +155,11 @@ public final class SimpleAI {
                 Unit u = gameState.boardUnits.get(key);
                 if (u == null) continue;
 
+                String owner = gameState.unitOwner.get(u.getId());
+                if (!"AI".equals(owner)) continue;
+
                 int ux = u.getPosition().getTilex();
+                int uy = u.getPosition().getTiley();
 
                 for (int dx = -1; dx <= 1; dx++) {
                     for (int dy = -1; dy <= 1; dy++) {
@@ -163,12 +170,13 @@ public final class SimpleAI {
                         if (!isOnBoard(tx, ty)) continue;
                         if (gameState.boardUnits.containsKey(gameState.key(tx, ty))) continue;
 
-                        
+                        candidates.add(new int[]{tx, ty});
                     }
                 }
             }
         }
 
+        if (candidates.isEmpty()) return null;
 
         // prefer tiles closer to human avatar
         candidates.sort(Comparator.comparingInt(t ->
@@ -176,6 +184,19 @@ public final class SimpleAI {
         ));
 
         return candidates.get(0);
+    }
+
+    private static List<String> getAiCardConfigs() {
+        File dir = new File("conf/gameconfs/cards/");
+        String[] p2 = dir.list((d, name) -> name.startsWith("2_") && name.endsWith(".json"));
+        if (p2 == null) return new ArrayList<>();
+
+        Arrays.sort(p2);
+        List<String> res = new ArrayList<>();
+        for (String s : p2) {
+            res.add("conf/gameconfs/cards/" + s);
+        }
+        return res;
     }
 
 }
