@@ -383,10 +383,11 @@ public final class SimpleAI {
         int bestHp = Integer.MAX_VALUE;
 
         for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy+) {
+            for (int dy = -1; dy <= 1; dy++) {
                 if (dx == 0 && dy == 0) continue;
 
-              
+                int tx = x + dx;
+                int ty = y + dy;
                 if (!isOnBoard(tx, ty)) continue;
 
                 Unit other = gameState.boardUnits.get(gameState.key(tx, ty));
@@ -397,10 +398,34 @@ public final class SimpleAI {
 
                 int hp = gameState.unitHealth.getOrDefault(other.getId(), 999);
                 if (hp < bestHp) {
+                    bestHp = hp;
                     best = other;
                 }
             }
         }
+        return best;
+    }
+
+    private static Unit nearestEnemyUnit(GameState gameState, int x, int y, String enemyOwner) {
+        Unit best = null;
+        int bestDist = Integer.MAX_VALUE;
+
+        for (Unit u : gameState.boardUnits.values()) {
+            if (u == null) continue;
+
+            String owner = gameState.unitOwner.get(u.getId());
+            if (!enemyOwner.equals(owner)) continue;
+
+            int ux = u.getPosition().getTilex();
+            int uy = u.getPosition().getTiley();
+            int dist = manhattan(x, y, ux, uy);
+
+            if (dist < bestDist) {
+                bestDist = dist;
+                best = u;
+            }
+        }
+
         return best;
     }
 
