@@ -3,7 +3,6 @@ package utils;
 import akka.actor.ActorRef;
 import commands.BasicCommands;
 import structures.GameState;
-import structures.basic.BetterUnit;
 import structures.basic.Card;
 import structures.basic.Player;
 import structures.basic.Tile;
@@ -13,10 +12,28 @@ import structures.basic.UnitAnimationType;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 public final class SimpleAI {
+
+    private static final int MAX_MOVE = 2;
+
+    private static final int[][] STEP_DIRS = {
+            { 1, 0}, {-1, 0}, {0, 1}, {0, -1},
+            { 1, 1}, { 1,-1}, {-1, 1}, {-1,-1}
+    };
+
+    private static final class PathNode {
+        int x, y, dist;
+        PathNode prev;
+
+        PathNode(int x, int y, int dist, PathNode prev) {
+            this.x = x;
+            this.y = y;
+            this.dist = dist;
+            this.prev = prev;
+        }
+    }
 
     private SimpleAI() {}
 
@@ -44,7 +61,8 @@ public final class SimpleAI {
         // 4) finish AI turn
         endAiTurn(out, gameState);
     }
-     // ------------------------------------------------------------
+
+    // ------------------------------------------------------------
     // TURN END
     // ------------------------------------------------------------
 
@@ -65,7 +83,8 @@ public final class SimpleAI {
 
         resetUnitsForTurn(gameState, "HUMAN");
     }
-        private static void resetUnitsForTurn(GameState gameState, String owner) {
+
+    private static void resetUnitsForTurn(GameState gameState, String owner) {
         for (Integer unitId : new ArrayList<>(gameState.unitOwner.keySet())) {
             String uOwner = gameState.unitOwner.get(unitId);
             if (owner.equals(uOwner)) {
@@ -74,6 +93,7 @@ public final class SimpleAI {
             }
         }
     }
+
     // ------------------------------------------------------------
     // SUMMONING
     // ------------------------------------------------------------
@@ -106,7 +126,7 @@ public final class SimpleAI {
             Card card = BasicObjectBuilders.loadCard(cfg, 9003, Card.class);
             if (card == null) continue;
 
-            int[] tile = chooseBestSummonTile(gameState, card);
+            int[] tile = chooseBestSummonTile(gameState, card); // keep your existing summon method
             if (tile == null) continue;
 
             Unit unit = SummonUtils.spawnUnit(
@@ -135,57 +155,6 @@ public final class SimpleAI {
         return false;
     }
 
-    private static int[] chooseBestSummonTile(GameState gameState, Card card) {
-        List<int[]> candidates = new ArrayList<>();
-
-        // Special case: Ironcliff Guardian can be summoned anywhere
-        String name = normalize(card.getCardname());
-        boolean summonAnywhere = name.equals("ironcliff guardian");
-
-        if (summonAnywhere) {
-            for (int x = 0; x < 9; x++) {
-                for (int y = 0; y < 5; y++) {
-                    if (!gameState.boardUnits.containsKey(gameState.key(x, y))) {
-                        candidates.add(new int[]{x, y});
-                    }
-                }
-            }
-        } else {
-            for (String key : gameState.boardUnits.keySet()) {
-                Unit u = gameState.boardUnits.get(key);
-                if (u == null) continue;
-
-                String owner = gameState.unitOwner.get(u.getId());
-                if (!"AI".equals(owner)) continue;
-
-                int ux = u.getPosition().getTilex();
-                int uy = u.getPosition().getTiley();
-
-                for (int dx = -1; dx <= 1; dx++) {
-                    for (int dy = -1; dy <= 1; dy++) {
-                        if (dx == 0 && dy == 0) continue;
-
-                        int tx = ux + dx;
-                        int ty = uy + dy;
-                        if (!isOnBoard(tx, ty)) continue;
-                        if (gameState.boardUnits.containsKey(gameState.key(tx, ty))) continue;
-
-                        candidates.add(new int[]{tx, ty});
-                    }
-                }
-            }
-        }
-
-        if (candidates.isEmpty()) return null;
-
-        // prefer tiles closer to human avatar
-        candidates.sort(Comparator.comparingInt(t ->
-                manhattan(t[0], t[1], 1, 2)
-        ));
-
-        return candidates.get(0);
-    }
-
     private static List<String> getAiCardConfigs() {
         File dir = new File("conf/gameconfs/cards/");
         String[] p2 = dir.list((d, name) -> name.startsWith("2_") && name.endsWith(".json"));
@@ -199,11 +168,49 @@ public final class SimpleAI {
         return res;
     }
 
+    private static int[] chooseBestSummonTile(GameState gameState, Card card) {
+    List<int[]> candidates = new ArrayList<>();
+
+    // AI usually summons on its own side: columns 6, 7, 8
+    for (int x = 6; x <= 8; x++) {
+        for (int y = 0; y < 5; y++) {
+            if (!isOnBoard(x, y)) continue;
+            if (occupied(gameState, x, y)) continue;
+
+            candidates.add(new int[]{x, y});
+        }
+    }
+
+    if (candidates.isEmpty()) return null;
+
+    int[] best = null;
+    int bestScore = Integer.MAX_VALUE;
+
+    for (int[] pos : candidates) {
+        int x = pos[0];
+        int y = pos[1];
+
+        int score = distanceToClosestAttackPosition(gameState, x, y, "HUMAN");
+
+        // prefer being near enemies a bit, but not mandatory
+        if (wouldBeAdjacentToEnemy(gameState, x, y, "HUMAN")) {
+            score -= 20;
+        }
+
+        if (score < bestScore) {
+            bestScore = score;
+            best = pos;
+        }
+    }
+
+    return best;
+    }
+
     // ------------------------------------------------------------
     // MOVEMENT
     // ------------------------------------------------------------
 
-       private static void moveAllUnitsTowardEnemy(ActorRef out, GameState gameState) {
+    private static void moveAllUnitsTowardEnemy(ActorRef out, GameState gameState) {
         List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
 
         for (Unit unit : aiUnits) {
@@ -211,10 +218,6 @@ public final class SimpleAI {
             if (gameState.gameOver) return;
 
             int id = unit.getId();
-
-            if (id == gameState.aiAvatarId) {
-                // allow avatar to move too if you want; keep it simple for now
-            }
 
             if (gameState.unitHasMoved.getOrDefault(id, false)) continue;
             if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
@@ -233,53 +236,141 @@ public final class SimpleAI {
     }
 
     private static int[] chooseBestMoveTile(GameState gameState, Unit unit) {
-        int ux = unit.getPosition().getTilex();
-        int uy = unit.getPosition().getTiley();
+        List<PathNode> reachable = getReachableTiles(gameState, unit, MAX_MOVE);
+        if (reachable.isEmpty()) return null;
 
-        List<int[]> moves = new ArrayList<>();
+        PathNode best = null;
+        int bestScore = Integer.MAX_VALUE;
 
-        // cardinal up to 2
-        int[][] dirs = {
-                {1, 0}, {-1, 0}, {0, 1}, {0, -1}
-        };
+        for (PathNode node : reachable) {
+            int score = distanceToClosestAttackPosition(gameState, node.x, node.y, "HUMAN");
 
-        for (int[] d : dirs) {
-            int x1 = ux + d[0];
-            int y1 = uy + d[1];
-            if (isOnBoard(x1, y1) && !occupied(gameState, x1, y1)) {
-                moves.add(new int[]{x1, y1});
+            // strong preference for ending next to an enemy
+            if (wouldBeAdjacentToEnemy(gameState, node.x, node.y, "HUMAN")) {
+                score -= 100;
+            }
 
-                int x2 = ux + 2 * d[0];
-                int y2 = uy + 2 * d[1];
-                if (isOnBoard(x2, y2) && !occupied(gameState, x2, y2)) {
-                    moves.add(new int[]{x2, y2});
+            // slight preference for shorter path
+            score += node.dist;
+
+            if (score < bestScore) {
+                bestScore = score;
+                best = node;
+            }
+        }
+
+        if (best == null) return null;
+        return new int[]{best.x, best.y};
+    }
+
+    private static List<PathNode> getReachableTiles(GameState gameState, Unit unit, int maxMove) {
+        List<PathNode> reachable = new ArrayList<>();
+
+        int startX = unit.getPosition().getTilex();
+        int startY = unit.getPosition().getTiley();
+
+        boolean[][] visited = new boolean[9][5];
+        List<PathNode> queue = new ArrayList<>();
+
+        PathNode start = new PathNode(startX, startY, 0, null);
+        queue.add(start);
+        visited[startX][startY] = true;
+
+        for (int i = 0; i < queue.size(); i++) {
+            PathNode current = queue.get(i);
+
+            if (!(current.x == startX && current.y == startY)) {
+                reachable.add(current);
+            }
+
+            if (current.dist >= maxMove) continue;
+
+            for (int[] d : STEP_DIRS) {
+                int nx = current.x + d[0];
+                int ny = current.y + d[1];
+
+                if (!isOnBoard(nx, ny)) continue;
+                if (visited[nx][ny]) continue;
+                if (!canStep(gameState, current.x, current.y, nx, ny)) continue;
+
+                visited[nx][ny] = true;
+                queue.add(new PathNode(nx, ny, current.dist + 1, current));
+            }
+        }
+
+        return reachable;
+    }
+
+    private static boolean canStep(GameState gameState, int fromX, int fromY, int toX, int toY) {
+        if (!isOnBoard(toX, toY)) return false;
+        if (occupied(gameState, toX, toY)) return false;
+
+        int dx = toX - fromX;
+        int dy = toY - fromY;
+
+        // stop diagonal corner-cutting through occupied tiles
+        if (Math.abs(dx) == 1 && Math.abs(dy) == 1) {
+            if (occupied(gameState, fromX + dx, fromY) || occupied(gameState, fromX, fromY + dy)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static boolean wouldBeAdjacentToEnemy(GameState gameState, int x, int y, String enemyOwner) {
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int tx = x + dx;
+                int ty = y + dy;
+
+                if (!isOnBoard(tx, ty)) continue;
+
+                Unit other = gameState.boardUnits.get(gameState.key(tx, ty));
+                if (other == null) continue;
+
+                String owner = gameState.unitOwner.get(other.getId());
+                if (enemyOwner.equals(owner)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static int distanceToClosestAttackPosition(GameState gameState, int x, int y, String enemyOwner) {
+        int best = Integer.MAX_VALUE;
+
+        for (Unit enemy : gameState.boardUnits.values()) {
+            if (enemy == null) continue;
+
+            String owner = gameState.unitOwner.get(enemy.getId());
+            if (!enemyOwner.equals(owner)) continue;
+
+            int ex = enemy.getPosition().getTilex();
+            int ey = enemy.getPosition().getTiley();
+
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (dx == 0 && dy == 0) continue;
+
+                    int ax = ex + dx;
+                    int ay = ey + dy;
+
+                    if (!isOnBoard(ax, ay)) continue;
+
+                    boolean blocked = occupied(gameState, ax, ay) && !(ax == x && ay == y);
+                    if (blocked) continue;
+
+                    int dist = manhattan(x, y, ax, ay);
+                    if (dist < best) best = dist;
                 }
             }
         }
 
-        // diagonals by 1
-        int[][] diag = {
-                {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
-        };
-
-        for (int[] d : diag) {
-            int tx = ux + d[0];
-            int ty = uy + d[1];
-            if (isOnBoard(tx, ty) && !occupied(gameState, tx, ty)) {
-                moves.add(new int[]{tx, ty});
-            }
-        }
-
-        if (moves.isEmpty()) return null;
-
-        Unit nearestHuman = nearestEnemyUnit(gameState, ux, uy, "HUMAN");
-        if (nearestHuman == null) return null;
-
-        int hx = nearestHuman.getPosition().getTilex();
-        int hy = nearestHuman.getPosition().getTiley();
-
-        moves.sort(Comparator.comparingInt(m -> manhattan(m[0], m[1], hx, hy)));
-        return moves.get(0);
+        return best;
     }
 
     private static void moveUnit(ActorRef out, GameState gameState, Unit unit, int toX, int toY) {
@@ -297,11 +388,12 @@ public final class SimpleAI {
         gameState.boardUnits.put(newKey, unit);
         gameState.unitPositionKey.put(id, newKey);
     }
+
     // ------------------------------------------------------------
     // ATTACKING
     // ------------------------------------------------------------
 
-      private static void attackAllPossible(ActorRef out, GameState gameState) {
+    private static void attackAllPossible(ActorRef out, GameState gameState) {
         List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
 
         for (Unit attacker : aiUnits) {
@@ -371,11 +463,11 @@ public final class SimpleAI {
         }
     }
 
-       // ------------------------------------------------------------
+    // ------------------------------------------------------------
     // TARGETING HELPERS
     // ------------------------------------------------------------
 
-     private static Unit findAdjacentEnemy(GameState gameState, Unit unit, String enemyOwner) {
+    private static Unit findAdjacentEnemy(GameState gameState, Unit unit, String enemyOwner) {
         int x = unit.getPosition().getTilex();
         int y = unit.getPosition().getTiley();
 
@@ -475,6 +567,4 @@ public final class SimpleAI {
         } catch (InterruptedException ignored) {
         }
     }
-
 }
-
