@@ -49,6 +49,12 @@ public class GameState {
 		return nextUnitId++;
 	}
 
+	// ---- Runtime deck/hand tracking (human) ----
+	// Stores card config paths in current order.
+	public final List<String> humanDeck = new ArrayList<>();
+	public final List<String> humanHand = new ArrayList<>();
+
+
 	// ---- Card selection ----
 	public Integer selectedHandPos = null;
 	public String selectedCardConfig = null;
@@ -64,6 +70,34 @@ public class GameState {
 	public String key(int x, int y) {
 		return x + "," + y;
 	}
+
+	public int[] getUnitPosition(int unitId) {
+		String pos = unitPositionKey.get(unitId);
+		if (pos == null) return null;
+
+		String[] parts = pos.split(",");
+		if (parts.length != 2) return null;
+
+		try {
+			return new int[] {
+				Integer.parseInt(parts[0]),
+				Integer.parseInt(parts[1])
+			};
+		} catch (NumberFormatException e) {
+			return null;
+		}
+	}
+
+	public int[] getAvatarPosition(String owner) {
+		int avatarId = "AI".equals(owner) ? aiAvatarId : humanAvatarId;
+		int[] pos = getUnitPosition(avatarId);
+
+		if (pos != null) return pos;
+
+		// fallback to starting positions if something is missing
+		return "AI".equals(owner) ? new int[]{7, 2} : new int[]{1, 2};
+	}
+
 
 	public final Map<Integer, Integer> unitMaxHealth = new HashMap<>();
 	public final Map<Integer, String> unitOwner = new HashMap<>();

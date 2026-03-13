@@ -9,9 +9,12 @@ import utils.BasicObjectBuilders;
 import utils.HighlightUtils;
 import utils.SpellTargetRules;
 
-import java.io.File;
+import structures.basic.Tile;
+
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 
 public class CardClicked implements EventProcessor {
 
@@ -25,9 +28,19 @@ public class CardClicked implements EventProcessor {
         int handPosition = message.get("position").asInt(); // 1..6
         if (handPosition < 1 || handPosition > 6) return;
 
-        // map handPosition -> initial sorted human cards
-        String cardConfig = getInitialHumanCardConfig(handPosition);
+        // read from current runtime hand, not initial fixed files
+        if (handPosition > gameState.humanHand.size()) return;
+
+        String cardConfig = gameState.humanHand.get(handPosition - 1);
         if (cardConfig == null) return;
+
+        // click same selected card again -> cancel selection
+        if (gameState.selectedHandPos != null
+            && gameState.selectedHandPos == handPosition
+            && cardConfig.equals(gameState.selectedCardConfig)) {
+        HighlightUtils.clearSelectionAndHighlights(out, gameState);
+        return;
+        }
 
         Card card = BasicObjectBuilders.loadCard(cardConfig, 1000 + handPosition, Card.class);
         if (card == null) return;
@@ -41,6 +54,7 @@ public class CardClicked implements EventProcessor {
         // clear previous selection & highlights
         HighlightUtils.clearSelectionAndHighlights(out, gameState);
 
+
         // store selection state
         gameState.selectedHandPos = handPosition;
         gameState.selectedCardConfig = cardConfig;
@@ -52,62 +66,56 @@ public class CardClicked implements EventProcessor {
         // ------------------------------
         // Story #31: spell target highlight
         // ------------------------------
-        if (!card.isCreature()) {
+        // Story #32: unit summon highlight
+        if (card.isCreature()) {
+            List<int[]> summonTiles = getHumanSummonTiles(gameState);
+            highlightTilesWhite(out, gameState, summonTiles);
+        return;
+        }
 
-            List<int[]> targets =
-                    SpellTargetRules.getValidTargetTiles(gameState, card);
+        // Story #31: spell target highlight
+        List<int[]> targets = SpellTargetRules.getValidTargetTiles(gameState, card);
+        HighlightUtils.highlightTilesRed(out, gameState, targets);
 
-            HighlightUtils.highlightTilesRed(out, gameState, targets);
+    }
+
+    
+    
+    private List<int[]> getHumanSummonTiles(GameState gameState) {
+        List<int[]> result = new ArrayList<>();
+
+        int[] avatarPos = gameState.getAvatarPosition("HUMAN");
+        int avatarX = avatarPos[0];
+        int avatarY = avatarPos[1];
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int x = avatarX + dx;
+                int y = avatarY + dy;
+
+                if (x < 0 || x >= 9 || y < 0 || y >= 5) continue;
+                if (gameState.boardUnits.containsKey(gameState.key(x, y))) continue;
+
+                result.add(new int[]{x, y});
+            }
+        }
+
+        return result;
+    }
+
+    private void highlightTilesWhite(ActorRef out, GameState gameState, List<int[]> tiles) {
+        if (tiles == null || tiles.isEmpty()) return;
+
+        for (int[] xy : tiles) {
+            int x = xy[0];
+            int y = xy[1];
+
+            Tile tile = BasicObjectBuilders.loadTile(x, y);
+            BasicCommands.drawTile(out, tile, 1);
+            gameState.highlightedMovedTiles.add(gameState.key(x, y));
         }
     }
 
-    /**
-     * Returns config path for initial hand mapping.
-     * handPosition 1..3 -> first 3 sorted "1_*.json" cards.
-     * Others -> null.
-     */
-    
-    private String getInitialHumanCardConfig(int handPosition) {
-
-        if (handPosition < 1 || handPosition > 3) return null;
-
-        File dir = new File("conf/gameconfs/cards/");
-        String[] p1 = dir.list((d, name) ->
-                name.startsWith("1_") && name.endsWith(".json"));
-
-        if (p1 == null || p1.length == 0) return null;
-
-        Arrays.sort(p1);
-
-        int idx = handPosition - 1;
-        if (idx >= p1.length) return null;
-
-        return "conf/gameconfs/cards/" + p1[idx];
-    }
-    
-    /** 
-    //test #26
-    private String getInitialHumanCardConfig(int handPosition) {
-
-    if (handPosition < 1 || handPosition > 6) return null;
-
-    // temporary test: put Sundrop Elixir in slot 1
-    if (handPosition == 1) {
-        return "conf/gameconfs/cards/2_9_c_s_sundrop_elixir.json";
-    }
-
-    File dir = new File("conf/gameconfs/cards/");
-    String[] p1 = dir.list((d, name) ->
-            name.startsWith("1_") && name.endsWith(".json"));
-
-    if (p1 == null || p1.length == 0) return null;
-
-    Arrays.sort(p1);
-
-    int idx = handPosition - 2; // because slot 1 is occupied by Sundrop now
-    if (idx < 0 || idx >= p1.length) return null;
-
-    return "conf/gameconfs/cards/" + p1[idx];
-    }
-    */
 }

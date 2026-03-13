@@ -7,7 +7,7 @@ import structures.basic.Unit;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import structures.basic.Unit;
+
 
 /**
  * Story #31 helper (single GameState architecture):
@@ -27,8 +27,12 @@ public final class SpellTargetRules {
 
         // - boardUnits contains ALL units (including avatars) as UI Units
         // - avatars are at fixed positions (1,2) and (7,2)
-        int humanAx = 1, humanAy = 2;
-        int aiAx = 7, aiAy = 2;
+        int[] humanAvatarPos = gameState.getAvatarPosition("HUMAN");
+        int[] aiAvatarPos = gameState.getAvatarPosition("AI");
+
+        int humanAx = humanAvatarPos[0], humanAy = humanAvatarPos[1];
+        int aiAx = aiAvatarPos[0], aiAy = aiAvatarPos[1];
+
 
 
         if (n.equals("truestrike")) {

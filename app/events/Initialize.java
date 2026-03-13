@@ -49,6 +49,30 @@ public class Initialize implements EventProcessor {
         gameState.unitAttack.clear();
         gameState.unitPositionKey.clear();
 
+        gameState.humanDeck.clear();
+        gameState.humanHand.clear();
+
+        gameState.highlightedMovedTiles.clear();
+
+        gameState.selectedHandPos = null;
+        gameState.selectedCardConfig = null;
+        gameState.selectedCardIsUnit = false;
+        gameState.selectUnitId = null;
+
+        gameState.unitMaxHealth.clear();
+        gameState.unitOwner.clear();
+        gameState.unitName.clear();
+        gameState.unitHasMoved.clear();
+        gameState.unitHadAttacked.clear();
+        gameState.stunnedUntilEndOfOwnersTurn.clear();
+
+        gameState.hornOfForsaken = false;
+        gameState.hornRobustness = 0;
+
+        gameState.nextUnitId = 1000;
+
+
+
         // for Story #17/#30
         if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.clear();
         if (gameState.unitOwner != null) gameState.unitOwner.clear();
@@ -133,6 +157,7 @@ public class Initialize implements EventProcessor {
         // 4) Story #1: Draw 3 cards for human
         // ----------------------------------------------------
        
+        /**
         File dir = new File("conf/gameconfs/cards/");
         String[] p1 = dir.list((d, name) -> name.startsWith("1_") && name.endsWith(".json"));
 
@@ -149,6 +174,37 @@ public class Initialize implements EventProcessor {
                 }
             }
         }
+            */
+       
+        // debug
+      
+        File dir = new File("conf/gameconfs/cards/");
+        String[] p1 = dir.list((d, name) -> name.startsWith("1_") && name.endsWith(".json"));
+
+        if (p1 != null) {
+            Arrays.sort(p1);
+
+            // build runtime deck in order
+            for (String fileName : p1) {
+                gameState.humanDeck.add("conf/gameconfs/cards/" + fileName);
+            }
+
+            // draw starting hand (up to 3 cards)
+            int startingDraw = Math.min(3, gameState.humanDeck.size());
+            for (int i = 0; i < startingDraw; i++) {
+                String cfg = gameState.humanDeck.remove(0);
+                gameState.humanHand.add(cfg);
+
+                int handPos = i + 1;
+                int cardId = 1000 + handPos;
+
+                Card c = BasicObjectBuilders.loadCard(cfg, cardId, Card.class);
+                if (c != null) {
+                    BasicCommands.drawCard(out, c, handPos, 0);
+                }
+            }
+        }
+
         
 
         /** 

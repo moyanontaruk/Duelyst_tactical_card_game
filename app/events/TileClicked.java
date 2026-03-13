@@ -176,9 +176,26 @@ public class TileClicked implements EventProcessor {
 
         int selectedPos = gameState.selectedHandPos;
 
-        // Load selected card
-        Card card = BasicObjectBuilders.loadCard(gameState.selectedCardConfig, 1000 + selectedPos, Card.class);
-        if (card == null) return;
+        // validate selected position against current runtime hand
+        if (selectedPos < 1 || selectedPos > gameState.humanHand.size()) {
+            HighlightUtils.clearSelectionAndHighlights(out, gameState);
+            return;
+        }
+
+        // the selected card must still match the actual current card in hand
+        String currentCfg = gameState.humanHand.get(selectedPos - 1);
+        if (currentCfg == null || !currentCfg.equals(gameState.selectedCardConfig)) {
+            HighlightUtils.clearSelectionAndHighlights(out, gameState);
+            return;
+        }
+
+        // Load selected card from current runtime hand
+        Card card = BasicObjectBuilders.loadCard(currentCfg, 1000 + selectedPos, Card.class);
+        if (card == null) {
+            HighlightUtils.clearSelectionAndHighlights(out, gameState);
+            return;
+        }
+
 
         // ------------------------------------------------------------
         // Branch A: Unit card summon
@@ -190,33 +207,44 @@ public class TileClicked implements EventProcessor {
             // Tile must be empty
             if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return;
 
-            // can summon only within 1 tile of human avatar at (1,2)
-            if (!isWithinOneTile(tilex, tiley, 1, 2)) return;
+            // can summon only on currently highlighted valid summon tiles
+            if (!gameState.highlightedMovedTiles.contains(gameState.key(tilex, tiley))) return;
+
 
             // Mana check
             int cost = card.getManacost();
             if (gameState.humanMana < cost) {
                 BasicCommands.addPlayer1Notification(out, "Not enough mana", 2);
-                return;
+            return;
             }
 
-            // 1) decrement mana + update UI
-            gameState.humanMana -= cost;
-            BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+            // Prepare summon data first, before spending mana
+            if (card.getBigCard() == null || card.getUnitConfig() == null) {
+                BasicCommands.addPlayer1Notification(out, "Unit data is invalid", 2);
+                HighlightUtils.clearSelectionAndHighlights(out, gameState);
+            return;
+            }
 
-            // 2) play summon animation
             Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
-            EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
-            if (summonFx != null) BasicCommands.playEffectAnimation(out, summonFx, tile);
-
-            // 3) create unit id + stats
             int unitId = gameState.allocateUnitId();
+            Unit unit = BasicObjectBuilders.loadUnit(card.getUnitConfig(), unitId, BetterUnit.class);
+
+            if (unit == null) {
+                BasicCommands.addPlayer1Notification(out, "Failed to summon unit", 2);
+                HighlightUtils.clearSelectionAndHighlights(out, gameState);
+            return;
+            }
+
             int atk = card.getBigCard().getAttack();
             int hp = card.getBigCard().getHealth();
 
-            // 4) draw unit in frontend + set stats
-            Unit unit = BasicObjectBuilders.loadUnit(card.getUnitConfig(), unitId, BetterUnit.class);
-            if (unit == null) return;
+            // play summon animation
+            EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
+            if (summonFx != null) BasicCommands.playEffectAnimation(out, summonFx, tile);
+
+            if (!spendHumanMana(out, gameState, cost)) return;
+
+
 
             unit.setPositionByTile(tile);
             BasicCommands.drawUnit(out, unit, tile);
@@ -269,6 +297,12 @@ public class TileClicked implements EventProcessor {
             return;
         }
 
+        // generic safety check: clicked tile must be one of the currently highlighted valid spell targets
+        if (!gameState.highlightedTargetTiles.contains(gameState.key(tilex, tiley))) {
+            return;
+        }
+
+
         if (!isValidSpellTarget(gameState, card, tilex, tiley)) {
             return;
         }
@@ -280,11 +314,12 @@ public class TileClicked implements EventProcessor {
 
             // clicked tile must be empty AND within 1 tile of human avatar (same as highlight rules)
             if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return;
-            if (!isWithinOneTile(tilex, tiley, 1, 2)) return;
+            if (!gameState.highlightedTargetTiles.contains(gameState.key(tilex, tiley))) return;
+
 
             // spend mana
-            gameState.humanMana -= cost;
-            BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+            if (!spendHumanMana(out, gameState, cost)) return;
+
 
             // play spell effect (optional)
             Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
@@ -295,9 +330,11 @@ public class TileClicked implements EventProcessor {
             // 1) first at clicked tile
             SummonUtils.spawnWraithling(out, gameState, tilex, tiley, "HUMAN");
 
-            // 2) fill remaining around avatar (1,2), skipping occupied
+            // 2) fill remaining around current human avatar position, skipping occupied tiles
             int summoned = 1;
-            int ax = 1, ay = 2;
+            int[] avatarPos = gameState.getAvatarPosition("HUMAN");
+            int ax = avatarPos[0], ay = avatarPos[1];
+
 
             for (int dx = -1; dx <= 1 && summoned < 3; dx++) {
                 for (int dy = -1; dy <= 1 && summoned < 3; dy++) {
@@ -330,8 +367,8 @@ public class TileClicked implements EventProcessor {
         if (target == null) return;
 
         // spend mana
-        gameState.humanMana -= cost;
-        BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+        if (!spendHumanMana(out, gameState, cost)) return;
+
 
         boolean applied = DirectDamageSpellUtils.dealDamageToUnit(
             out,
@@ -359,8 +396,8 @@ public class TileClicked implements EventProcessor {
             if (target == null) return;
 
             // spend mana
-            gameState.humanMana -= cost;
-            BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+            if (!spendHumanMana(out, gameState, cost)) return;
+
 
             boolean applied = HealSpellUtils.healUnit(
                     out,
@@ -395,8 +432,8 @@ public class TileClicked implements EventProcessor {
         if (!"AI".equals(owner)) return;
 
         // spend mana
-        gameState.humanMana -= cost;
-        BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+        if (!spendHumanMana(out, gameState, cost)) return;
+
 
         // apply stun
         if (!StunRules.applyStunToUnit(out, gameState, target)) return;
@@ -414,14 +451,16 @@ public class TileClicked implements EventProcessor {
             if (target == null) return;
 
             // must be enemy creature (not AI avatar id=200)
-            if (target.getId() == 200) return;
+            // must be enemy creature (not AI avatar)
+            if (target.getId() == gameState.aiAvatarId) return;
+
 
             String owner = gameState.unitOwner.get(target.getId());
             if (!"AI".equals(owner)) return;
 
             // spend mana
-            gameState.humanMana -= cost;
-            BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+            if (!spendHumanMana(out, gameState, cost)) return;
+
 
             // kill target
             if (!DestroySpellUtils.destroyNonAvatarUnit(out, gameState, target)) return;
@@ -437,11 +476,13 @@ public class TileClicked implements EventProcessor {
         // ------ story card 19: damage ability trigger -------
         if (name.equals("horn of the forsaken")) {
             // target must be human avatar tile (1,2)
-            if (tilex !=1 || tiley!=2) return;
+            int[] avatarPos = gameState.getAvatarPosition("HUMAN");
+            if (tilex != avatarPos[0] || tiley != avatarPos[1]) return;
+
 
             //spend mana
-            gameState.humanMana -= cost;
-            BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+            if (!spendHumanMana(out, gameState, cost)) return;
+
 
             // play effect on avatar tile
             Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
@@ -492,78 +533,63 @@ public class TileClicked implements EventProcessor {
         return x >= 0 && x < 9 && y >= 0 && y < 5;
     }
 
+    private boolean spendHumanMana(ActorRef out, GameState gameState, int cost) {
+        if (gameState.humanMana < cost) {
+            BasicCommands.addPlayer1Notification(out, "Not enough mana", 2);
+            return false;
+        }
+
+        gameState.humanMana -= cost;
+        BasicCommands.setPlayer1Mana(out, new Player(gameState.humanHealth, gameState.humanMana));
+        return true;
+    }
+
+
     /**
      * Remove the selected card from hand UI and clear selection/highlights.
      * (keeps your existing "redraw from conf folder" approach)
      */
     private void consumeSelectedCardAndClear(ActorRef out, GameState gameState, int selectedPos) {
 
-        // 1) remove selected card from hand UI
-        BasicCommands.deleteCard(out, selectedPos);
-
-        List<String> hand = getCurrentHumanHandConfigs();
-        if (hand.size() >= selectedPos) {
-            hand.remove(selectedPos - 1);
+        // 1) remove selected card from real runtime hand
+        if (selectedPos >= 1 && selectedPos <= gameState.humanHand.size()) {
+            gameState.humanHand.remove(selectedPos - 1);
         }
 
-        // redraw up to 6
-        for (int i = 0; i < hand.size() && i < 6; i++) {
-            String cfg = hand.get(i);
-            int handPos = i + 1;
-            Card c = BasicObjectBuilders.loadCard(cfg, 1000 + handPos, Card.class);
-            if (c != null) BasicCommands.drawCard(out, c, handPos, 0);
-        }
-        // clear any leftover slots if hand shrank
-        for (int pos = hand.size() + 1; pos <= 6; pos++) {
+        // 2) clear all hand slots first
+        for (int pos = 1; pos <= 6; pos++) {
             BasicCommands.deleteCard(out, pos);
         }
 
-        // 2) clear selection/highlights
+        // 3) redraw current runtime hand from left to right
+        for (int i = 0; i < gameState.humanHand.size() && i < 6; i++) {
+            String cfg = gameState.humanHand.get(i);
+            int handPos = i + 1;
+            Card c = BasicObjectBuilders.loadCard(cfg, 1000 + handPos, Card.class);
+            if (c != null) {
+                BasicCommands.drawCard(out, c, handPos, 0);
+            }
+        }
+
+        // 4) clear summon/move highlights and spell target highlights
+        clearMoveHighlights(out, gameState);
         HighlightUtils.clearHighlightedTiles(out, gameState);
+
+        // 5) clear selection state
         gameState.selectedHandPos = null;
         gameState.selectedCardConfig = null;
         gameState.selectedCardIsUnit = false;
     }
+
 
     /**
      * NOTE: Your current hand logic is "read from conf folder" (static), not real runtime deck.
      * I keep it as-is to avoid breaking your current tests/template.
      */
     
-    private List<String> getCurrentHumanHandConfigs() {
-        File dir = new File("conf/gameconfs/cards/");
-        String[] p1 = dir.list((d, name) -> name.startsWith("1_") && name.endsWith(".json"));
-        if (p1 == null) return new ArrayList<>();
-
-        Arrays.sort(p1);
-
-        List<String> res = new ArrayList<>();
-        for (int i = 0; i < p1.length && i < 6; i++) {
-            res.add("conf/gameconfs/cards/" + p1[i]);
-        }
-        return res;
-    }
     
-    /** 
-    //test #26
-    private List<String> getCurrentHumanHandConfigs() {
-    List<String> res = new ArrayList<>();
-
-    // temporary test hand
-    res.add("conf/gameconfs/cards/2_9_c_s_sundrop_elixir.json");
-
-    File dir = new File("conf/gameconfs/cards/");
-    String[] p1 = dir.list((d, name) -> name.startsWith("1_") && name.endsWith(".json"));
-    if (p1 == null) return res;
-
-    Arrays.sort(p1);
-
-    for (int i = 0; i < p1.length && res.size() < 6; i++) {
-        res.add("conf/gameconfs/cards/" + p1[i]);
-    }
-    return res;
-    }
-    */
+    
+    
 
 
     // helper for SC6 -Maggie
