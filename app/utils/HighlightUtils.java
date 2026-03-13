@@ -19,9 +19,9 @@ public final class HighlightUtils {
 
     /** Clears any previously highlighted target tiles (mode=0). */
     public static void clearHighlightedTiles(ActorRef out, GameState gameState) {
-        if (out == null || gameState == null) return;
-        if (gameState.highlightedTargetTiles.isEmpty()) return;
+    if (gameState == null) return;
 
+    if (out != null && !gameState.highlightedTargetTiles.isEmpty()) {
         for (String key : gameState.highlightedTargetTiles) {
             String[] parts = key.split(",");
             if (parts.length != 2) continue;
@@ -30,9 +30,10 @@ public final class HighlightUtils {
                 int y = Integer.parseInt(parts[1]);
                 Tile tile = BasicObjectBuilders.loadTile(x, y);
                 BasicCommands.drawTile(out, tile, 0);
-            } catch (NumberFormatException ignored) {
+                } catch (NumberFormatException ignored) {
             }
         }
+    }
 
         gameState.highlightedTargetTiles.clear();
     }
@@ -58,12 +59,17 @@ public final class HighlightUtils {
 
     /** Unhighlights any currently selected card (if still present) and clears selection state. */
     public static void clearCardSelection(ActorRef out, GameState gameState) {
-        if (out == null || gameState == null) return;
+        if (gameState == null) return;
 
-        if (gameState.selectedHandPos != null && gameState.selectedCardConfig != null) {
-            Card card = BasicObjectBuilders.loadCard(gameState.selectedCardConfig, gameState.selectedHandPos, Card.class);
-            if (card != null) {
-                BasicCommands.drawCard(out, card, gameState.selectedHandPos, 0);
+        if (out != null && gameState.selectedHandPos != null) {
+            int pos = gameState.selectedHandPos;
+
+            if (pos >= 1 && pos <= gameState.humanHand.size()) {
+                String cfg = gameState.humanHand.get(pos - 1);
+                Card card = BasicObjectBuilders.loadCard(cfg, 1000 + pos, Card.class);
+                if (card != null) {
+                    BasicCommands.drawCard(out, card, pos, 0);
+                }
             }
         }
 
@@ -72,34 +78,34 @@ public final class HighlightUtils {
         gameState.selectedCardIsUnit = false;
     }
 
+
     /** Convenience: clear both selection + target highlights. */
     public static void clearSelectionAndHighlights(ActorRef out, GameState gameState) {
+        if (gameState == null) return;
+
         clearCardSelection(out, gameState);
         clearHighlightedTiles(out, gameState);
 
-        //clear the current selected board unit id
         gameState.selectUnitId = null;
 
-        if (out != null && gameState != null && !gameState.highlightedMovedTiles.isEmpty()) {
+        if (out != null && !gameState.highlightedMovedTiles.isEmpty()) {
             for (String key : gameState.highlightedMovedTiles) {
-
                 String[] parts = key.split(",");
-                if (parts.length != 2)
-                    continue;
+                if (parts.length != 2) continue;
+
                 try {
                     int x = Integer.parseInt(parts[0]);
                     int y = Integer.parseInt(parts[1]);
-
                     Tile tile = BasicObjectBuilders.loadTile(x, y);
-
                     BasicCommands.drawTile(out, tile, 0);
                 } catch (NumberFormatException ignored) {
                 }
             }
-            //clear the stored white moved highlight key from gamestate
-            gameState.highlightedMovedTiles.clear();
         }
+
+        gameState.highlightedMovedTiles.clear();
     }
+
 
     // Returns enemy-occupied tiles surrounding the given coordinates based on player type
     public static List<int[]> getEnemyTiles(int x, int y,boolean isHuman,GameState gameState) {

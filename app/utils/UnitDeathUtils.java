@@ -63,10 +63,10 @@ public class UnitDeathUtils {
         int unitId = unit.getId();
 
 
-        if (unitId == 100 || unitId == 200) {
-
+        if (unitId == gameState.humanAvatarId || unitId == gameState.aiAvatarId) {
             return;
         }
+
 
         // play death animation (returns an estimate of duration)
         if (out != null) {
