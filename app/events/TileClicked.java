@@ -24,7 +24,9 @@ import utils.OpeningGambitResolver;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import utils.SpellTargetRules;
 import utils.DirectDamageSpellUtils;
@@ -156,15 +158,21 @@ public class TileClicked implements EventProcessor {
                 boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(unitId, false);
 
                 //show white highlights if unit has not moved
+                //show white highlights if unit has not moved
                 if (!alreadyMoved) {
-                    List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
-                    highlightMoveTilesWhite(out, gameState, reachable);
-                }
+                List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
+                highlightMoveTilesWhite(out, gameState, reachable);
 
-                // always show enemy tiles in red
-                List<int[]> attackable = HighlightUtils.getEnemyTiles(tilex, tiley, true, gameState);
-                HighlightUtils.highlightTilesRed(out, gameState, attackable);
-                return;
+                // show in red any enemy that could be attacked after moving to
+                // one of the highlighted destination tiles
+                List<int[]> attackableAfterMove = getAttackableAfterMoveTiles(gameState, reachable);
+                HighlightUtils.highlightTilesRed(out, gameState, attackableAfterMove);
+            }
+
+// always show enemy tiles in red if they are already adjacent now
+List<int[]> attackable = HighlightUtils.getEnemyTiles(tilex, tiley, true, gameState);
+HighlightUtils.highlightTilesRed(out, gameState, attackable);
+return;
             }
         }
         //SC 6 done
@@ -599,6 +607,25 @@ public class TileClicked implements EventProcessor {
             gameState.highlightedMovedTiles.add(gameState.key(x, y));
         }
     }
+
+    private List<int[]> getAttackableAfterMoveTiles(GameState gameState, List<int[]> reachableTiles) {
+    List<int[]> result = new ArrayList<>();
+    Set<String> seen = new HashSet<>();
+
+    for (int[] xy : reachableTiles) {
+        if (xy == null || xy.length < 2) continue;
+
+        List<int[]> adjacentEnemies = HighlightUtils.getEnemyTiles(xy[0], xy[1], true, gameState);
+        for (int[] enemyTile : adjacentEnemies) {
+            String key = gameState.key(enemyTile[0], enemyTile[1]);
+            if (seen.add(key)) {
+                result.add(enemyTile);
+            }
+        }
+    }
+
+    return result;
+}
 
     private List<int[]> getValidMoveTiles(
             GameState gameState,
