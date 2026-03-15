@@ -57,7 +57,19 @@ public final class HighlightUtils {
         }
     }
 
-    
+    public static void highlightTilesWhite(ActorRef out, GameState gameState, List<int[]> tiles0Based){
+        if (out == null || gameState == null) return;
+        if (tiles0Based == null || tiles0Based.isEmpty()) return;
+
+        for (int[] xy : tiles0Based){
+            if ( xy == null || xy.length < 2) continue;
+            int x = xy[0];
+            int y = xy[1];
+            Tile tile = BasicObjectBuilders.loadTile(x,y);
+            BasicCommands.drawTile(out, tile, 1);
+            gameState.highlightedTargetTiles.add(x + "," + y);
+        }
+    }
 
     /** Unhighlights any currently selected card (if still present) and clears selection state. */
     public static void clearCardSelection(ActorRef out, GameState gameState) {
