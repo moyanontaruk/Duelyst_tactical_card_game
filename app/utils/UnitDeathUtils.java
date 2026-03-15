@@ -186,6 +186,7 @@ public class UnitDeathUtils {
         
         //story card 19: remove from zeal on death
         gameState.zealUnitIds.remove(unitId);
+        gameState.provokeUnitIds.remove(unitId);
 
         // clear Story #17 support maps
         if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.remove(unitId);

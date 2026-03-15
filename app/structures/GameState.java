@@ -38,6 +38,7 @@ public class GameState {
 
 	public final Map<Integer, Integer> unitHealth = new HashMap<>();
 	public final Map<Integer, Integer> unitAttack = new HashMap<>();
+	public final Set<Integer> provokeUnitIds = new HashSet<>();
 	// unitId -> board key ("x,y") to allow fast removal from boardUnits when a unit dies
 	public final Map<Integer, String> unitPositionKey = new HashMap<>();
 

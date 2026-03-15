@@ -169,7 +169,9 @@ public class TileClicked implements EventProcessor {
 
                 boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(unitId, false);
 
-                if (!alreadyMoved) {
+                boolean provoked = HighlightUtils.isProvoked(gameState, clickedUnit);
+
+                if (!alreadyMoved && !provoked) {
                     List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
                     highlightMoveTilesWhite(out, gameState, reachable);
 
@@ -177,8 +179,21 @@ public class TileClicked implements EventProcessor {
                     HighlightUtils.highlightTilesRed(out, gameState, attackableAfterMove);
                 }
 
-                List<int[]> attackable = HighlightUtils.getEnemyTiles(tilex, tiley, true, gameState);
-                HighlightUtils.highlightTilesRed(out, gameState, attackable);
+                List<Unit> adjacentProvokers = HighlightUtils.getAdjacentEnemyProvokers(gameState, clickedUnit);
+
+                if (!adjacentProvokers.isEmpty()) {
+                    List<int[]> provokeTargets = new ArrayList<>();
+                    for (Unit provokeUnit : adjacentProvokers) {
+                        provokeTargets.add(new int[]{
+                                provokeUnit.getPosition().getTilex(),
+                                provokeUnit.getPosition().getTiley()
+                        });
+                    }
+                    HighlightUtils.highlightTilesRed(out, gameState, provokeTargets);
+                } else {
+                    List<int[]> attackable = HighlightUtils.getEnemyTiles(tilex, tiley, true, gameState);
+                    HighlightUtils.highlightTilesRed(out, gameState, attackable);
+                }
                 return;
             }
         }
@@ -258,6 +273,13 @@ public class TileClicked implements EventProcessor {
             gameState.unitOwner.put(unitId, "HUMAN");
             gameState.unitName.put(unitId, card.getCardname());
 
+            String unitNameLower = card.getCardname() == null ? "" : card.getCardname().trim().toLowerCase();
+            if (unitNameLower.equals("rock pulveriser")
+                    || unitNameLower.equals("swamp entangler")
+                    || unitNameLower.equals("silverguard knight")
+                    || unitNameLower.equals("ironcliff guardian")) {
+                gameState.provokeUnitIds.add(unitId);
+            }
             boolean hasRush = (unit instanceof BetterUnit) && ((BetterUnit) unit).getHasRush();
             if (!hasRush) {
                 gameState.unitHasMoved.put(unitId, true);

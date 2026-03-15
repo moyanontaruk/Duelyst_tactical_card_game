@@ -61,6 +61,15 @@ public final class SummonUtils {
         else if (unitConfig.contains("bloodmoon_priestess")) gameState.unitName.put(unitId, "Bloodmoon Priestess");
         else if (unitConfig.contains("wraithling")) gameState.unitName.put(unitId, "Wraithling");
 
+        // --- register Provoke units ---
+        if (unitConfig.contains("rock_pulveriser")
+                || unitConfig.contains("swamp_entangler")
+                || unitConfig.contains("silverguard_knight")
+                || unitConfig.contains("ironcliff_guardian")) {
+
+            gameState.provokeUnitIds.add(unitId);
+        }
+
         // --- story card 19 damage trigger ability ---
         // register Zeal units (Silverguard Knight)
         if (unitConfig != null && unitConfig.contains("silverguard_knight")){
