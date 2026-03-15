@@ -6,6 +6,7 @@ import commands.BasicCommands;
 import structures.GameState;
 import akka.actor.ActorRef;
 import utils.UnitDeathUtils;
+
 /**
  * This is a representation of a Unit on the game board.
  * A unit has a unique id (this is used by the front-end.
@@ -149,28 +150,31 @@ public class Unit {
 	}
 
 	// correction to attack () needed -- adding UnitDeathUtils - Maggie
-	public void attack(
-			GameState gameState,
-			ActorRef out,
-			Unit enemy){
-		health= gameState.unitHealth.get(id);
-		enemy.health = gameState.unitHealth.get(enemy.id);
-		attack=gameState.unitAttack.get(id);
-		enemy.attack=gameState.unitAttack.get(enemy.id);
+	public void attack(GameState gameState, ActorRef out, Unit enemy) {
 
-		//debug - Maggie
-		//record that the current unit has attacked this turn
-		gameState.unitHadAttacked.put(id,true);
+		if (gameState == null || enemy == null) return;
 
+		int attackerId = this.id;
+		int defenderId = enemy.id;
 
+		Integer attackerHpObj = gameState.unitHealth.get(attackerId);
+		Integer defenderHpObj = gameState.unitHealth.get(defenderId);
+		Integer attackerAtkObj = gameState.unitAttack.get(attackerId);
+		Integer defenderAtkObj = gameState.unitAttack.get(defenderId);
 
-		//sc 10...
-		//if unit attacks before moving, it'll lost the change to move later
-		//gameState.unitHasMoved.put(id,true);
+		if (attackerHpObj == null || defenderHpObj == null || attackerAtkObj == null || defenderAtkObj == null) {
+			return;
+		}
 
+		int attackerHp = attackerHpObj;
+		int defenderHp = defenderHpObj;
+		int attackerAtk = attackerAtkObj;
+		int defenderAtk = defenderAtkObj;
 
+		// mark attacker already attacked this turn
+		gameState.unitHadAttacked.put(attackerId, true);
 
-
+		// attack animation
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
 		try {
 			Thread.sleep(600);
@@ -178,44 +182,26 @@ public class Unit {
 			e.printStackTrace();
 		}
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.idle);
-		enemy.health-=attack;
-		gameState.unitHealth.put(enemy.id,enemy.health);
-		BasicCommands.setUnitHealth(out,enemy,enemy.health);
-		if (enemy.health<=0)
-		{
-			BasicCommands.playUnitAnimation(out,enemy,UnitAnimationType.death);
-			try {
-				Thread.sleep(600);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			BasicCommands.deleteUnit(out,enemy);
-		}else
-		{
-			BasicCommands.playUnitAnimation(out,enemy,UnitAnimationType.attack);
-			health-=enemy.attack;
-			gameState.unitHealth.put(id,health);
-			try {
-				Thread.sleep(600);
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
-			BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
-			BasicCommands.setUnitHealth(out,this,health);
-			if (health<=0)
-			{
-				BasicCommands.playUnitAnimation(out,this,UnitAnimationType.death);
-				try {
-					Thread.sleep(600);
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-				BasicCommands.deleteUnit(out,this);
-			}
 
+		// attacker deals damage
+		int defenderNewHp = defenderHp - attackerAtk;
+		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, enemy, defenderNewHp);
+
+		// if defender died, stop
+		if (!gameState.uiUnitById.containsKey(defenderId)) {
+			return;
 		}
 
-	}
+		// counter attack
+		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.attack);
+		try {
+			Thread.sleep(600);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
 
-	
+		int attackerNewHp = attackerHp - defenderAtk;
+		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, this, attackerNewHp);
+	}
 }
