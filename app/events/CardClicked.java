@@ -75,8 +75,16 @@ public class CardClicked implements EventProcessor {
 
         // Story #31: spell target highlight
         List<int[]> targets = SpellTargetRules.getValidTargetTiles(gameState, card);
-        HighlightUtils.highlightTilesRed(out, gameState, targets);
 
+        // lower case card name
+        String cardName = card.getCardname() == null ? "" : card.getCardname().trim().toLowerCase();
+        // friendlies are highlighted white 
+        if (cardName.equals("horn of the forsaken")){
+            HighlightUtils.highlightTilesWhite(out, gameState, targets);
+        } else {
+            //enemy/attack is highlighted red
+            HighlightUtils.highlightTilesRed(out, gameState, targets);
+        }
     }
 
     
