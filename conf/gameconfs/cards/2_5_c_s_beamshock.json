@@ -1,7 +1,7 @@
 {
 	"id": 0,
 	"cardname": "Beamshock",
-	"manacost": 1,
+	"manacost": 0,
 	"miniCard": {
 		"cardTextures": [
 			"assets/game/extra/cards/card_background.png",
