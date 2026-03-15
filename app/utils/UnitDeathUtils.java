@@ -28,7 +28,9 @@ public class UnitDeathUtils {
         // --- story card 19 damage abilities trigger ----
         int currentHealth = gameState.unitHealth.getOrDefault(unitId, 0);
         int damage = currentHealth - newHealth;
-        gameState.damageOnAvatarTrigger(out, unitId, damage);
+        if (damage > 0) {
+            gameState.damageOnAvatarTrigger(out, unitId, damage);
+        }
 
         // 1) Update server-side health state
         gameState.unitHealth.put(unitId, newHealth);
@@ -42,10 +44,14 @@ public class UnitDeathUtils {
         // 3) if unit is avatar, change health
         if (unitId == gameState.humanAvatarId){
             gameState.humanHealth = newHealth;
-            BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
+            if (out != null) {
+                BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
+            }
         } else if (unitId == gameState.aiAvatarId){
             gameState.aiHealth = newHealth;
-            BasicCommands.setPlayer2Health(out, new Player(gameState.aiHealth, gameState.aiMana));
+            if (out != null) {
+                BasicCommands.setPlayer2Health(out, new Player(gameState.aiHealth, gameState.aiMana));
+            }
         }
 
         // 4) If health <= 0, kill the unit
@@ -62,8 +68,22 @@ public class UnitDeathUtils {
 
         int unitId = unit.getId();
 
+        //lin-debug
+        if (unitId == gameState.humanAvatarId) {
+            gameState.gameOver = true;
+            gameState.winner = "AI";
+            if (out != null) {
+                BasicCommands.addPlayer1Notification(out, "Game Over! AI wins!", 5);
+            }
+            return;
+        }
 
-        if (unitId == gameState.humanAvatarId || unitId == gameState.aiAvatarId) {
+        if (unitId == gameState.aiAvatarId) {
+            gameState.gameOver = true;
+            gameState.winner = "HUMAN";
+            if (out != null) {
+                BasicCommands.addPlayer1Notification(out, "Game Over! You win!", 5);
+            }
             return;
         }
 
@@ -166,6 +186,7 @@ public class UnitDeathUtils {
         
         //story card 19: remove from zeal on death
         gameState.zealUnitIds.remove(unitId);
+        gameState.provokeUnitIds.remove(unitId);
 
         // clear Story #17 support maps
         if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.remove(unitId);

@@ -185,8 +185,11 @@ public class Initialize implements EventProcessor {
             Arrays.sort(p1);
 
             // build runtime deck in order
+            // build runtime deck in order, 2 copies of each card
             for (String fileName : p1) {
-                gameState.humanDeck.add("conf/gameconfs/cards/" + fileName);
+                String cfg = "conf/gameconfs/cards/" + fileName;
+                gameState.humanDeck.add(cfg);
+                gameState.humanDeck.add(cfg);
             }
 
             // draw starting hand (up to 3 cards)

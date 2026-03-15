@@ -222,9 +222,11 @@ public final class SimpleAI {
             if (gameState.unitHasMoved.getOrDefault(id, false)) continue;
             if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
 
+            // if provoked, do not move
+            if (HighlightUtils.isProvoked(gameState, unit)) continue;
+
             // if already adjacent to enemy, don't move
             if (findAdjacentEnemy(gameState, unit, "HUMAN") != null) continue;
-
             int[] step = chooseBestMoveTile(gameState, unit);
             if (step == null) continue;
 
@@ -474,6 +476,8 @@ public final class SimpleAI {
         Unit best = null;
         int bestHp = Integer.MAX_VALUE;
 
+        List<Unit> adjacentProvokers = new ArrayList<>();
+
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 if (dx == 0 && dy == 0) continue;
@@ -488,13 +492,44 @@ public final class SimpleAI {
                 String owner = gameState.unitOwner.get(other.getId());
                 if (!enemyOwner.equals(owner)) continue;
 
-                int hp = gameState.unitHealth.getOrDefault(other.getId(), 999);
-                if (hp < bestHp) {
-                    bestHp = hp;
-                    best = other;
+                if (gameState.provokeUnitIds.contains(other.getId())) {
+                    adjacentProvokers.add(other);
                 }
             }
         }
+
+        List<Unit> candidates = new ArrayList<>();
+
+        if (!adjacentProvokers.isEmpty()) {
+            candidates = adjacentProvokers;
+        } else {
+            for (int dx = -1; dx <= 1; dx++) {
+                for (int dy = -1; dy <= 1; dy++) {
+                    if (dx == 0 && dy == 0) continue;
+
+                    int tx = x + dx;
+                    int ty = y + dy;
+                    if (!isOnBoard(tx, ty)) continue;
+
+                    Unit other = gameState.boardUnits.get(gameState.key(tx, ty));
+                    if (other == null) continue;
+
+                    String owner = gameState.unitOwner.get(other.getId());
+                    if (enemyOwner.equals(owner)) {
+                        candidates.add(other);
+                    }
+                }
+            }
+        }
+
+        for (Unit other : candidates) {
+            int hp = gameState.unitHealth.getOrDefault(other.getId(), 999);
+            if (hp < bestHp) {
+                bestHp = hp;
+                best = other;
+            }
+        }
+
         return best;
     }
 

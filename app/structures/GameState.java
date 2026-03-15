@@ -5,6 +5,7 @@ import java.util.*;
 import structures.basic.Unit;
 import commands.BasicCommands;
 import akka.actor.ActorRef;
+import utils.UnitDeathUtils;
 
 
 public class GameState {
@@ -37,6 +38,7 @@ public class GameState {
 
 	public final Map<Integer, Integer> unitHealth = new HashMap<>();
 	public final Map<Integer, Integer> unitAttack = new HashMap<>();
+	public final Set<Integer> provokeUnitIds = new HashSet<>();
 	// unitId -> board key ("x,y") to allow fast removal from boardUnits when a unit dies
 	public final Map<Integer, String> unitPositionKey = new HashMap<>();
 
@@ -131,37 +133,31 @@ public class GameState {
 
 	// apply damage to unit
 	public void applyDamageToUnit(int unitId, int amount){
-		//get health value from unit id, if not there default to 0
+		Unit unit = uiUnitById.get(unitId);
+		if (unit == null) return;
+
 		int current = unitHealth.getOrDefault(unitId, 0);
 		int newHp = current - amount;
-		unitHealth.put(unitId, newHp);
 
-		// applying damage to human/ai player if unit is avatar
-		if (unitId == humanAvatarId){
-			humanHealth = newHp;
-		} else if (unitId == aiAvatarId){
-			aiHealth = newHp;
-		}
+		UnitDeathUtils.setUnitHealthAndCheckDeath(null, this, unit, newHp);
 	}
 
 	//apply healing to unit
 	public void applyHealingToUnit(int unitId, int amount){
+		Unit unit = uiUnitById.get(unitId);
+		if (unit == null) return;
+
 		int current = unitHealth.getOrDefault(unitId, 0);
 		int newHp = current + amount;
-		unitHealth.put(unitId, newHp);
 
-		//apply healing to human/ai player if unit if avatar
-		if (unitId == humanAvatarId){
-			humanHealth = newHp;
-		} else if (unitId == aiAvatarId){
-			aiHealth = newHp;
-		}
+		UnitDeathUtils.setUnitHealthAndCheckDeath(null, this, unit, newHp);
 	}
 
 
 	// --- story card 19: damage trigger abilities ---
 	// Zeal and Horn of the Forsaken
 	public final Set<Integer> zealUnitIds = new HashSet<>();
+	public final Set<Integer> zealBuffApplied = new HashSet<>();
 	public boolean hornOfForsaken = false;
 	public int hornRobustness = 0;
 
@@ -174,11 +170,19 @@ public class GameState {
 		//Zeal trigger (Silvergaurd Knight)
 		for (int zealUnitId : zealUnitIds){
 			if (!damagedOwner.equals(unitOwner.get(zealUnitId))) continue;
+
+			// only apply zeal buff once
+			if (zealBuffApplied.contains(zealUnitId)) continue;
+
 			int currentAttack = unitAttack.getOrDefault(zealUnitId, 0);
-			unitAttack.put(zealUnitId, currentAttack + 2);
+			int newAttack = currentAttack + 2;
+
+			unitAttack.put(zealUnitId, newAttack);
+			zealBuffApplied.add(zealUnitId);
+
 			Unit zealUnit = uiUnitById.get(zealUnitId);
 			if (zealUnit != null && out != null){
-				BasicCommands.setUnitAttack(out, zealUnit, currentAttack + 2);
+				BasicCommands.setUnitAttack(out, zealUnit, newAttack);
 			}
 		}
 

@@ -169,5 +169,42 @@ public final class HighlightUtils {
         }
         return surroundingTiles;
     }
+    public static List<Unit> getAdjacentEnemyProvokers(GameState gameState, Unit unit) {
+        List<Unit> result = new ArrayList<>();
+        if (gameState == null || unit == null) return result;
+
+        String myOwner = gameState.unitOwner.get(unit.getId());
+        String enemyOwner = "HUMAN".equals(myOwner) ? "AI" : "HUMAN";
+
+        int x = unit.getPosition().getTilex();
+        int y = unit.getPosition().getTiley();
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int tx = x + dx;
+                int ty = y + dy;
+                if (tx < 0 || tx >= 9 || ty < 0 || ty >= 5) continue;
+
+                Unit other = gameState.boardUnits.get(gameState.key(tx, ty));
+                if (other == null) continue;
+
+                int otherId = other.getId();
+                if (!gameState.provokeUnitIds.contains(otherId)) continue;
+
+                String owner = gameState.unitOwner.get(otherId);
+                if (enemyOwner.equals(owner)) {
+                    result.add(other);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    public static boolean isProvoked(GameState gameState, Unit unit) {
+        return !getAdjacentEnemyProvokers(gameState, unit).isEmpty();
+    }
 
 }
