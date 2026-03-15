@@ -534,7 +534,7 @@ return;
 
             // play effect on avatar tile
             Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
-            EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
+            EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_buff);
             if (fx != null) BasicCommands.playEffectAnimation(out, fx, tile);
 
             //equip artifact -- story card 19----

@@ -57,6 +57,8 @@ public final class HighlightUtils {
         }
     }
 
+    
+
     /** Unhighlights any currently selected card (if still present) and clears selection state. */
     public static void clearCardSelection(ActorRef out, GameState gameState) {
         if (gameState == null) return;
