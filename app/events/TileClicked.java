@@ -57,75 +57,116 @@ public class TileClicked implements EventProcessor {
             String clickedKey = gameState.key(tilex, tiley);
 
             //Story 11 (Unit Action: Move)
+                        //Story 11 (Unit Action: Move)
             if (gameState.selectUnitId != null) {
 
                 Unit selectedUnit = gameState.uiUnitById.get(gameState.selectUnitId);
 
-                //safety
+                // safety
                 if (selectedUnit == null) {
                     gameState.selectUnitId = null;
                     clearMoveHighlights(out, gameState);
                     HighlightUtils.clearHighlightedTiles(out, gameState);
                     return;
                 }
-                //move clicked
+
+                // move clicked
                 if (gameState.highlightedMovedTiles.contains(clickedKey)) {
                     Tile target = BasicObjectBuilders.loadTile(tilex, tiley);
 
-                    //sending to UI
+                    // sending to UI
                     BasicCommands.moveUnitToTile(out, selectedUnit, target, true);
 
-                    //updating position backend
+                    // updating position backend
                     selectedUnit.setPositionByTile(target);
 
-                    //remove unit from previous tile
+                    // remove unit from previous tile
                     gameState.boardUnits.values().removeIf(v -> v.equals(selectedUnit));
 
-                    //add unit to new tile
+                    // add unit to new tile
                     gameState.boardUnits.put(gameState.key(tilex, tiley), selectedUnit);
 
-                    //tracking where the units are
+                    // tracking where the units are
                     gameState.unitPositionKey.put(
                             selectedUnit.getId(),
                             gameState.key(tilex, tiley)
                     );
 
-                    //noting that the unit alrady moved this turn
+                    // noting that the unit already moved this turn
                     gameState.unitHasMoved.put(selectedUnit.getId(), true);
 
-                    //this will clear the selection so the player can click unit again
-                    //can still attack later during the same turn
+                    // clear selection so player can click unit again
                     gameState.selectUnitId = null;
 
-                    //remove white/red highlights from board
                     clearMoveHighlights(out, gameState);
                     HighlightUtils.clearHighlightedTiles(out, gameState);
                     return;
-                } else if (gameState.highlightedTargetTiles.contains(clickedKey)) {
+                }
+                else if (gameState.highlightedTargetTiles.contains(clickedKey)) {
 
-                    //get enemy unit on that clicked tile
                     Unit enemy = gameState.boardUnits.get(clickedKey);
 
-                    //safety to not attack null
                     if (enemy != null) {
-                        selectedUnit.attack(gameState, out, enemy);
+                        int ux = selectedUnit.getPosition().getTilex();
+                        int uy = selectedUnit.getPosition().getTiley();
+                        int ex = enemy.getPosition().getTilex();
+                        int ey = enemy.getPosition().getTiley();
+
+                        // already adjacent -> attack now
+                        if (isAdjacent(ux, uy, ex, ey)) {
+                            selectedUnit.attack(gameState, out, enemy);
+
+                            gameState.selectUnitId = null;
+                            clearMoveHighlights(out, gameState);
+                            HighlightUtils.clearHighlightedTiles(out, gameState);
+                            return;
+                        }
+
+                        // not adjacent yet -> move first, then attack
+                        boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(selectedUnit.getId(), false);
+
+                        if (!alreadyMoved) {
+                            List<int[]> reachable = getValidMoveTiles(gameState, ux, uy);
+                            int[] moveTile = findAdjacentMoveTile(reachable, ex, ey);
+
+                            if (moveTile != null) {
+                                Tile target = BasicObjectBuilders.loadTile(moveTile[0], moveTile[1]);
+
+                                gameState.pendingAttackAfterMove.put(selectedUnit.getId(), enemy.getId());
+
+                                BasicCommands.moveUnitToTile(out, selectedUnit, target, true);
+
+                                selectedUnit.setPositionByTile(target);
+
+                                gameState.boardUnits.values().removeIf(v -> v.equals(selectedUnit));
+                                gameState.boardUnits.put(gameState.key(moveTile[0], moveTile[1]), selectedUnit);
+                                gameState.unitPositionKey.put(selectedUnit.getId(), gameState.key(moveTile[0], moveTile[1]));
+                                gameState.unitHasMoved.put(selectedUnit.getId(), true);
+
+                                gameState.selectUnitId = null;
+                                clearMoveHighlights(out, gameState);
+                                HighlightUtils.clearHighlightedTiles(out, gameState);
+                                return;
+                            }
+                        }
                     }
 
-                    //clear the selected unit and highlights after the attack
+                    // fallback
                     gameState.selectUnitId = null;
                     clearMoveHighlights(out, gameState);
                     HighlightUtils.clearHighlightedTiles(out, gameState);
                     return;
                 }
-                //if click was not on a highlighted move or attack tile,
-                // clear current selection/highlights and continue
+
+                // click was not on a highlighted move or attack tile
                 gameState.selectUnitId = null;
                 clearMoveHighlights(out, gameState);
                 HighlightUtils.clearHighlightedTiles(out, gameState);
             }
 
+
             // checks if the tile clicked has a unit
-            else {
+ else {
                 clearMoveHighlights(out, gameState);
                 HighlightUtils.clearHighlightedTiles(out, gameState);
                 Unit clickedUnit = gameState.boardUnits.get(clickedKey);
@@ -157,7 +198,6 @@ public class TileClicked implements EventProcessor {
                 //checking weather unit has alrady moved this turn
                 boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(unitId, false);
 
-                //show white highlights if unit has not moved
                 //show white highlights if unit has not moved
                 if (!alreadyMoved) {
                 List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
@@ -599,6 +639,23 @@ return;
     
     
 
+
+    private boolean isAdjacent(int x1, int y1, int x2, int y2) {
+    int dx = Math.abs(x1 - x2);
+    int dy = Math.abs(y1 - y2);
+    return dx <= 1 && dy <= 1 && !(dx == 0 && dy == 0);
+}
+
+    private int[] findAdjacentMoveTile(List<int[]> reachableTiles, int enemyX, int enemyY) {
+    for (int[] tile : reachableTiles) {
+        if (tile == null || tile.length < 2) continue;
+
+        if (isAdjacent(tile[0], tile[1], enemyX, enemyY)) {
+            return tile;
+        }
+    }
+    return null;
+}
 
     // helper for SC6 -Maggie
     private void clearMoveHighlights(ActorRef out, GameState gameState) {

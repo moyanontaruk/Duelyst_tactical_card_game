@@ -6,6 +6,7 @@ import structures.basic.Unit;
 import commands.BasicCommands;
 import akka.actor.ActorRef;
 
+
 public class GameState {
 
 	// ---- Template flags ----
@@ -42,6 +43,11 @@ public class GameState {
 	// ---- Story Card #29: stun tracking ----
 	// unitId -> owner whose next turn is blocked by stun ("HUMAN" or "AI")
 	public final Map<Integer, String> stunnedUntilEndOfOwnersTurn = new HashMap<>();
+
+	// pending "move first, then attack" action
+	// attacker unit id -> defender unit id
+	public final Map<Integer, Integer> pendingAttackAfterMove = new HashMap<>();
+
 
 	// ---- Unit id generator ----
 	public int nextUnitId = 1000;
