@@ -104,7 +104,7 @@ public class TileClicked implements EventProcessor {
                         boolean alreadyMoved = gameState.unitHasMoved.getOrDefault(selectedUnit.getId(), false);
 
                         if (!alreadyMoved) {
-                            List<int[]> reachable = getValidMoveTiles(gameState, ux, uy);
+                            List<int[]> reachable = getValidMoveTiles(gameState, ux, uy, selectedUnit);
                             int[] moveTile = findAdjacentMoveTile(reachable, ex, ey);
 
                             if (moveTile != null) {
@@ -172,7 +172,7 @@ public class TileClicked implements EventProcessor {
                 boolean provoked = HighlightUtils.isProvoked(gameState, clickedUnit);
 
                 if (!alreadyMoved && !provoked) {
-                    List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley);
+                    List<int[]> reachable = getValidMoveTiles(gameState, tilex, tiley, clickedUnit);
                     highlightMoveTilesWhite(out, gameState, reachable);
 
                     List<int[]> attackableAfterMove = getAttackableAfterMoveTiles(gameState, reachable);
@@ -576,9 +576,34 @@ public class TileClicked implements EventProcessor {
     private List<int[]> getValidMoveTiles(
             GameState gameState,
             int startX,
-            int startY) {
+            int startY,
+            Unit unit) {
 
         List<int[]> validTiles = new ArrayList<>();
+        boolean isFlying = false;
+
+        if (unit instanceof BetterUnit) {
+            BetterUnit betterUnit = (BetterUnit) unit;
+            if (betterUnit.getKeywords() != null) {
+                for (String keyword : betterUnit.getKeywords()) {
+                    if (keyword != null && keyword.equalsIgnoreCase("flying")) {
+                        isFlying = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (isFlying) {
+            for (int x = 0; x < 9; x++) {
+                for (int y = 0; y < 5; y++) {
+                    if (x == startX && y == startY) continue;
+                    if (gameState.boardUnits.containsKey(gameState.key(x, y))) continue;
+                    validTiles.add(new int[]{x, y});
+                }
+            }
+            return validTiles;
+        }
 
         int[][] cardinalsDir = new int[][]{
                 {1, 0},
