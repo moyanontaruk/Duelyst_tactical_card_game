@@ -44,6 +44,7 @@ public final class SummonUtils {
         BasicCommands.drawUnit(out, unit, tile);
         try {Thread.sleep(2000);} catch (InterruptedException e) {e.printStackTrace();}
         BasicCommands.setUnitAttack(out, unit, atk);
+        sleep(80);
         UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
 
         // server maps
@@ -101,5 +102,12 @@ public final class SummonUtils {
                 tilex, tiley,
                 1, 1,
                 owner);
+    }
+    // small UI sync delay
+    private static void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+        }
     }
 }
