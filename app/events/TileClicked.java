@@ -260,7 +260,9 @@ public class TileClicked implements EventProcessor {
 
             unit.setPositionByTile(tile);
             BasicCommands.drawUnit(out, unit, tile);
+            sleep(80);
             BasicCommands.setUnitAttack(out, unit, atk);
+            sleep(80);
             UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
 
             gameState.boardUnits.put(gameState.key(tilex, tiley), unit);
@@ -683,6 +685,13 @@ public class TileClicked implements EventProcessor {
                 SummonUtils.spawnWraithling(out, gameState, tx, ty, "HUMAN");
                 break;
             }
+        }
+    }
+    // small UI sync delay
+    private void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
         }
     }
 }

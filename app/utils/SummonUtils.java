@@ -40,7 +40,9 @@ public final class SummonUtils {
 
         // UI: draw + stats
         BasicCommands.drawUnit(out, unit, tile);
+        sleep(80);
         BasicCommands.setUnitAttack(out, unit, atk);
+        sleep(80);
         UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
 
         // server maps
@@ -98,5 +100,12 @@ public final class SummonUtils {
                 tilex, tiley,
                 1, 1,
                 owner);
+    }
+    // small UI sync delay
+    private static void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+        }
     }
 }
