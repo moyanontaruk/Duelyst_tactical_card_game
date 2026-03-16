@@ -114,6 +114,13 @@ public class Unit {
 	public void setHasRush(boolean hasRush){
 		this.hasRush = hasRush;
 	}
+	public void setAttack(int attack) {
+    this.attack = attack;
+}
+
+	public void setHealth(int health) {
+    this.health = health;
+}
 	
 	/**
 	 * This command sets the position of the Unit to a specified
