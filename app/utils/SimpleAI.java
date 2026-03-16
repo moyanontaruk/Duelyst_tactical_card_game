@@ -233,7 +233,7 @@ public final class SimpleAI {
             moveUnit(out, gameState, unit, step[0], step[1]);
             gameState.unitHasMoved.put(id, true);
 
-            sleep(300);
+            sleep(1000);
         }
     }
 
@@ -408,7 +408,8 @@ public final class SimpleAI {
             Unit target = findAdjacentEnemy(gameState, attacker, "HUMAN");
             if (target == null) continue;
 
-            performAttack(out, gameState, attacker, target);
+            //performAttack(out, gameState, attacker, target);
+            attacker.attack(gameState,out,target);
             gameState.unitHadAttacked.put(attackerId, true);
 
             sleep(250);
