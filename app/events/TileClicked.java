@@ -259,8 +259,12 @@ public class TileClicked implements EventProcessor {
             if (!spendHumanMana(out, gameState, cost)) return;
 
             unit.setPositionByTile(tile);
+            unit.setAttack(atk);
+            unit.setHealth(hp);
+            
             BasicCommands.drawUnit(out, unit, tile);
-            sleep(80);
+            try {Thread.sleep(100);} catch (InterruptedException e) {e.printStackTrace();}
+
             BasicCommands.setUnitAttack(out, unit, atk);
             sleep(80);
             UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
