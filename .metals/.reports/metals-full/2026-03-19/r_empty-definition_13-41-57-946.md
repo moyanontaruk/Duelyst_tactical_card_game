@@ -1,3 +1,19 @@
+error id: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/build.sbt:
+file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/build.sbt
+empty definition using pc, found symbol in pc: 
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+	 -dependencyOverrides.
+	 -dependencyOverrides#
+	 -dependencyOverrides().
+	 -scala/Predef.dependencyOverrides.
+	 -scala/Predef.dependencyOverrides#
+	 -scala/Predef.dependencyOverrides().
+offset: 838
+uri: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/build.sbt
+text:
+```scala
 lazy val root = (project in file("."))
   .enablePlugins(PlayJava)
   .settings(
@@ -22,7 +38,7 @@ lazy val root = (project in file("."))
       "org.assertj" % "assertj-core" % "3.14.0" % Test,
       "org.awaitility" % "awaitility" % "4.0.1" % Test,
     ),
-    dependencyOverrides += "commons-codec" % "commons-codec" % "1.6",
+    dependencyOverr@@ides += "commons-codec" % "commons-codec" % "1.6",
     dependencyOverrides += "commons-io" % "commons-io" % "2.1",
     libraryDependencies += "com.fasterxml.jackson.core" % "jackson-databind" % "2.10.3",
     libraryDependencies += "com.fasterxml.jackson.dataformat" % "jackson-dataformat-yaml" % "2.10.3",
@@ -35,3 +51,10 @@ lazy val root = (project in file("."))
       "-Xlint:deprecation"
     )
   )
+
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: 
