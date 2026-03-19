@@ -94,15 +94,15 @@ public class UnitDeathUtils {
         // play death animation (returns an estimate of duration)
        if (out != null) {
         int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
-        System.out.println("DEBUG delayMs=" + delayMs + " unitId=" + unitId);
         sleep(delayMs + 500);
 
 
-            // delete from UI
+            //  delete from UI
             BasicCommands.deleteUnit(out, unit);
             
             // give frontend time to finish before server cleans up
             sleep(500);
+            
         }
 
         // remove from server-side tracking
