@@ -398,7 +398,7 @@ public class TileClicked implements EventProcessor {
                     out,
                     gameState,
                     target,
-                    4,
+                    5,
                     null,
                     true,
                     StaticConfFiles.f1_buff
