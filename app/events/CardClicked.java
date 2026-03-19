@@ -70,6 +70,7 @@ public class CardClicked implements EventProcessor {
         if (card.isCreature()) {
             List<int[]> summonTiles = getHumanSummonTiles(gameState);
             highlightTilesWhite(out, gameState, summonTiles);
+            BasicObjectBuilders.sleep(150);
         return;
         }
 

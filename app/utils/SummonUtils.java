@@ -41,11 +41,12 @@ public final class SummonUtils {
         // UI: draw + stats
         unit.setAttack(atk);
         unit.setHealth(hp);
-        BasicCommands.drawUnit(out, unit, tile);
-        try {Thread.sleep(2000);} catch (InterruptedException e) {e.printStackTrace();}
+       BasicCommands.drawUnit(out, unit, tile);
+        sleep(180);
         BasicCommands.setUnitAttack(out, unit, atk);
         sleep(80);
         UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
+        sleep(80);
 
         // server maps
         gameState.boardUnits.put(gameState.key(tilex, tiley), unit);
