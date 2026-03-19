@@ -1,3 +1,14 @@
+error id: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/UnitDeathUtils.java
+file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/UnitDeathUtils.java
+### com.thoughtworks.qdox.parser.ParseException: syntax error @[131,31]
+
+error in qdox parser
+file content:
+```java
+offset: 4327
+uri: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/UnitDeathUtils.java
+text:
+```scala
 package utils;
 
 import java.util.ArrayList;
@@ -92,15 +103,13 @@ public class UnitDeathUtils {
 
 
         // play death animation (returns an estimate of duration)
-       if (out != null) {
-        int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
-        sleep(delayMs + 500);
+        if (out != null) {
+            int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
+            //minimum dealth animation plays 
+            sleep(Math.max(delayMs, 2000));
 
             // delete from UI
             BasicCommands.deleteUnit(out, unit);
-            
-            // give frontend time to finish before server cleans up
-            sleep(500);
         }
 
         // remove from server-side tracking
@@ -125,12 +134,12 @@ public class UnitDeathUtils {
                     e -> e.getValue() != null && e.getValue().getId() == unitId
             );
         }
+    }
 
         // SC18: Unit Death Trigger (Deathwatch)
         
         // Traverse all monsters still alive on the field
-        List<Unit> aliveSnapshot = new ArrayList<>(gameState.uiUnitById.values());
-        for (Unit aliveUnit : aliveSnapshot) {
+        for (Unit aliveUnit : g@@ameState.uiUnitById.values()) {
             if (aliveUnit == null) continue;
             
             int aliveId = aliveUnit.getId();
@@ -207,7 +216,35 @@ public class UnitDeathUtils {
                 }
             }
         }
+        
+        /* 
+
+        DELETE IF HOPE FIXES DEATH ANIMATION BUG!!
+
+        // remove from server-side tracking
+        gameState.uiUnitById.remove(unitId);
+        gameState.unitHealth.remove(unitId);
+        gameState.unitAttack.remove(unitId);
+        
+        //story card 19: remove from zeal on death
+        gameState.zealUnitIds.remove(unitId);
+        gameState.provokeUnitIds.remove(unitId);
+
+        // clear Story #17 support maps
+        if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.remove(unitId);
+        if (gameState.unitOwner != null) gameState.unitOwner.remove(unitId);
+
+        String key = gameState.unitPositionKey.remove(unitId);
+        if (key != null) {
+            gameState.boardUnits.remove(key);
+        } else {
+            // fallback: scan board in case position map was not maintained
+            gameState.boardUnits.entrySet().removeIf(
+                    e -> e.getValue() != null && e.getValue().getId() == unitId
+            );
+        }
     }
+    */
 
     private static void sleep(int ms) {
         if (ms <= 0) return;
@@ -217,3 +254,41 @@ public class UnitDeathUtils {
         }
     }
 }
+```
+
+```
+
+
+
+#### Error stacktrace:
+
+```
+com.thoughtworks.qdox.parser.impl.Parser.yyerror(Parser.java:2025)
+	com.thoughtworks.qdox.parser.impl.Parser.yyparse(Parser.java:2147)
+	com.thoughtworks.qdox.parser.impl.Parser.parse(Parser.java:2006)
+	com.thoughtworks.qdox.library.SourceLibrary.parse(SourceLibrary.java:232)
+	com.thoughtworks.qdox.library.SourceLibrary.parse(SourceLibrary.java:190)
+	com.thoughtworks.qdox.library.SourceLibrary.addSource(SourceLibrary.java:94)
+	com.thoughtworks.qdox.library.SourceLibrary.addSource(SourceLibrary.java:89)
+	com.thoughtworks.qdox.library.SortedClassLibraryBuilder.addSource(SortedClassLibraryBuilder.java:162)
+	com.thoughtworks.qdox.JavaProjectBuilder.addSource(JavaProjectBuilder.java:174)
+	scala.meta.internal.mtags.JavaMtags.indexRoot(JavaMtags.scala:49)
+	scala.meta.internal.metals.SemanticdbDefinition$.foreachWithReturnMtags(SemanticdbDefinition.scala:99)
+	scala.meta.internal.metals.Indexer.indexSourceFile(Indexer.scala:560)
+	scala.meta.internal.metals.Indexer.$anonfun$reindexWorkspaceSources$3(Indexer.scala:691)
+	scala.meta.internal.metals.Indexer.$anonfun$reindexWorkspaceSources$3$adapted(Indexer.scala:688)
+	scala.collection.IterableOnceOps.foreach(IterableOnce.scala:630)
+	scala.collection.IterableOnceOps.foreach$(IterableOnce.scala:628)
+	scala.collection.AbstractIterator.foreach(Iterator.scala:1313)
+	scala.meta.internal.metals.Indexer.reindexWorkspaceSources(Indexer.scala:688)
+	scala.meta.internal.metals.MetalsLspService.$anonfun$onChange$2(MetalsLspService.scala:940)
+	scala.runtime.java8.JFunction0$mcV$sp.apply(JFunction0$mcV$sp.scala:18)
+	scala.concurrent.Future$.$anonfun$apply$1(Future.scala:691)
+	scala.concurrent.impl.Promise$Transformation.run(Promise.scala:500)
+	java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	java.base/java.lang.Thread.run(Thread.java:840)
+```
+#### Short summary: 
+
+QDox parse error in file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/UnitDeathUtils.java
