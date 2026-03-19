@@ -3,7 +3,7 @@ lazy val root = (project in file("."))
   .settings(
 
     //will delete before turning in just need this line to run on mac - Hope
-    //PlayKeys.fileWatchService := play.dev.filewatch.FileWatchService.polling(2000),
+    PlayKeys.fileWatchService := play.dev.filewatch.FileWatchService.polling(2000),
 
 
     name := "ITSD Card Game 25-26",
