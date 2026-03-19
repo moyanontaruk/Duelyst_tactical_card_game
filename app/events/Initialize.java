@@ -84,12 +84,13 @@ public class Initialize implements EventProcessor {
         // ----------------------------------------------------
         // 1) Draw board tiles (9x5)
         // ----------------------------------------------------
-        for (int x = 0; x < 9; x++) {
-            for (int y = 0; y < 5; y++) {
-                Tile t = BasicObjectBuilders.loadTile(x, y);
-                BasicCommands.drawTile(out, t, 0);
-            }
-        }
+      for (int x = 0; x < 9; x++) {
+        for (int y = 0; y < 5; y++) {
+            Tile t = BasicObjectBuilders.loadTile(x, y);
+            BasicCommands.drawTile(out, t, 0);
+            sleep(20);
+    }
+}
 
         // ----------------------------------------------------
         // 2) Draw avatars
@@ -204,6 +205,7 @@ public class Initialize implements EventProcessor {
                 Card c = BasicObjectBuilders.loadCard(cfg, cardId, Card.class);
                 if (c != null) {
                     BasicCommands.drawCard(out, c, handPos, 0);
+                    sleep(80);
                 }
             }
         }
