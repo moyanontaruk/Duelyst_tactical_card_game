@@ -168,16 +168,36 @@ public final class SimpleAI {
         return res;
     }
 
-    private static int[] chooseBestSummonTile(GameState gameState, Card card) {
+private static int[] chooseBestSummonTile(GameState gameState, Card card) {
     List<int[]> candidates = new ArrayList<>();
+    java.util.Set<String> seen = new java.util.HashSet<>();
 
-    // AI usually summons on its own side: columns 6, 7, 8
-    for (int x = 6; x <= 8; x++) {
-        for (int y = 0; y < 5; y++) {
-            if (!isOnBoard(x, y)) continue;
-            if (occupied(gameState, x, y)) continue;
+    // collect all empty tiles adjacent to every AI-owned unit
+    for (Unit unit : gameState.boardUnits.values()) {
+        if (unit == null) continue;
 
-            candidates.add(new int[]{x, y});
+        String owner = gameState.unitOwner.get(unit.getId());
+        if (!"AI".equals(owner)) continue;
+
+        int unitX = unit.getPosition().getTilex();
+        int unitY = unit.getPosition().getTiley();
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int x = unitX + dx;
+                int y = unitY + dy;
+
+                if (!isOnBoard(x, y)) continue;
+                if (occupied(gameState, x, y)) continue;
+
+                String key = gameState.key(x, y);
+                if (seen.contains(key)) continue;
+
+                seen.add(key);
+                candidates.add(new int[]{x, y});
+            }
         }
     }
 
@@ -192,7 +212,7 @@ public final class SimpleAI {
 
         int score = distanceToClosestAttackPosition(gameState, x, y, "HUMAN");
 
-        // prefer being near enemies a bit, but not mandatory
+        // prefer tiles that land adjacent to a human unit
         if (wouldBeAdjacentToEnemy(gameState, x, y, "HUMAN")) {
             score -= 20;
         }
@@ -204,7 +224,7 @@ public final class SimpleAI {
     }
 
     return best;
-    }
+}
 
     // ------------------------------------------------------------
     // MOVEMENT
