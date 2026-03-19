@@ -39,17 +39,7 @@ public class OrderedCardLoader {
 				}
 			}
 		}
-		/* 
-		int cardID = 1;
-		for (int i =0; i<copies; i++) {
-			for (String filename : new File(cardsDIR).list()) {
-				if (filename.startsWith("1_")) {
-					// this is a deck 1 card
-					cardsInDeck.add(BasicObjectBuilders.loadCard(cardsDIR+filename, cardID, Card.class));
-				}
-			}
-		}
-		*/
+
 		//randomization
 		Collections.shuffle(cardsInDeck);
 		return cardsInDeck;
@@ -76,17 +66,7 @@ public class OrderedCardLoader {
 				}
 			}
 		}
-		/* 
-		int cardID = 1;
-		for (int i =0; i<copies; i++) {
-			for (String filename : new File(cardsDIR).list()) {
-				if (filename.startsWith("2_")) {
-					// this is a deck 2 card
-					cardsInDeck.add(BasicObjectBuilders.loadCard(cardsDIR+filename, cardID, Card.class));
-				}
-			}
-		}
-		*/
+
 		//randomization 
 		Collections.shuffle(cardsInDeck);
 		return cardsInDeck;

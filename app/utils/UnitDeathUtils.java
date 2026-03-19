@@ -96,11 +96,13 @@ public class UnitDeathUtils {
         int delayMs = BasicCommands.playUnitAnimation(out, unit, UnitAnimationType.death);
         sleep(delayMs + 500);
 
-            // delete from UI
+
+            //  delete from UI
             BasicCommands.deleteUnit(out, unit);
             
             // give frontend time to finish before server cleans up
             sleep(500);
+            
         }
 
         // remove from server-side tracking
