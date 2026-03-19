@@ -6,7 +6,9 @@ import structures.basic.Unit;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 
 /**
@@ -61,14 +63,38 @@ public final class SpellTargetRules {
 
         // Wraithling Swarm -> empty adjacent tiles around avatar (human)
         if (n.equals("wraithling swarm")) {
-            List<int[]> res = new ArrayList<>();
-            for (int[] xy : adjacentTiles(humanAx, humanAy)) {
-                if (xy != null && isOnBoard(xy[0], xy[1]) && isTileEmpty(gameState, xy[0], xy[1])) {
-                    res.add(new int[]{xy[0], xy[1]});
-                }
+    List<int[]> res = new ArrayList<>();
+    Set<String> seen = new HashSet<>();
+
+    for (Unit u : gameState.boardUnits.values()) {
+        if (u == null) continue;
+
+        String owner = gameState.unitOwner.get(u.getId());
+        if (!"HUMAN".equals(owner)) continue;
+
+        int x = u.getPosition().getTilex();
+        int y = u.getPosition().getTiley();
+
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0) continue;
+
+                int tx = x + dx;
+                int ty = y + dy;
+
+                if (!isOnBoard(tx, ty)) continue;
+                if (!isTileEmpty(gameState, tx, ty)) continue;
+
+                String key = gameState.key(tx, ty);
+                if (seen.contains(key)) continue;
+
+                seen.add(key);
+                res.add(new int[]{tx, ty});
             }
-            return res;
         }
+    }
+    return res;
+}
 
         return Collections.emptyList();
     }
