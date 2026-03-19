@@ -41,7 +41,7 @@ public final class SpellTargetRules {
             return tilesWithEnemyNonAvatarUnits(gameState, "AI");
         }
 
-        if (n.equals("beamshock")) {
+        if (n.equals("beam shock") || n.equals("beamshock")) {
             return tilesWithEnemyNonAvatarUnits(gameState, "AI");
         }
 

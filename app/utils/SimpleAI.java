@@ -132,7 +132,7 @@ public final class SimpleAI {
         Card card = affordableSpells.get(i);
         String name = normalize(card.getCardname());
 
-        if (name.equals("beam shock")) {
+        if (name.equals("beam shock") || name.equals("beamshock")) {
             Unit target = chooseBestAiBeamShockTarget(gameState);
             if (target == null) continue;
 
