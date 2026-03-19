@@ -464,7 +464,7 @@ public class TileClicked implements EventProcessor {
             gameState.hornOfForsaken = true;
             gameState.hornRobustness = 3;
 
-            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken equipped for the next 3 turns!", 3);
+            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken equipped with 3 robustness.", 3);
 
             consumeSelectedCardAndClear(out, gameState, selectedPos);
             return;
@@ -676,32 +676,41 @@ public class TileClicked implements EventProcessor {
         return validTiles;
     }
 
-    private void triggerHornOnHit(ActorRef out, GameState gameState, Unit attacker) {
-        if (attacker == null) return;
-        if (attacker.getId() != gameState.humanAvatarId) return;
-        if (!gameState.hornOfForsaken) return;
+private void triggerHornOnHit(ActorRef out, GameState gameState, Unit attacker) {
+    if (attacker == null) return;
+    if (attacker.getId() != gameState.humanAvatarId) return;
+    if (!gameState.hornOfForsaken) return;
+    if (gameState.hornRobustness <= 0) return;
 
-        int[] avatarPos = gameState.getAvatarPosition("HUMAN");
-        int px = avatarPos[0];
-        int py = avatarPos[1];
+    int[] avatarPos = gameState.getAvatarPosition("HUMAN");
+    int px = avatarPos[0];
+    int py = avatarPos[1];
 
-        int[][] neighbors = {
-                {1, 0}, {-1, 0}, {0, 1}, {0, -1}
-        };
+    List<int[]> emptyAdjacent = new ArrayList<>();
 
-        for (int[] offset : neighbors) {
-            int tx = px + offset[0];
-            int ty = py + offset[1];
+    for (int dx = -1; dx <= 1; dx++) {
+        for (int dy = -1; dy <= 1; dy++) {
+            if (dx == 0 && dy == 0) continue;
+
+            int tx = px + dx;
+            int ty = py + dy;
 
             if (tx < 0 || tx >= 9 || ty < 0 || ty >= 5) continue;
 
             String key = gameState.key(tx, ty);
             if (!gameState.boardUnits.containsKey(key)) {
-                SummonUtils.spawnWraithling(out, gameState, tx, ty, "HUMAN");
-                break;
+                emptyAdjacent.add(new int[]{tx, ty});
             }
         }
     }
+
+    if (emptyAdjacent.isEmpty()) return;
+
+    int idx = (int) (Math.random() * emptyAdjacent.size());
+    int[] chosen = emptyAdjacent.get(idx);
+
+    SummonUtils.spawnWraithling(out, gameState, chosen[0], chosen[1], "HUMAN");
+}
     // small UI sync delay
     private void sleep(int ms) {
         try {

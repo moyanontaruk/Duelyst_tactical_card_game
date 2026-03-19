@@ -186,16 +186,25 @@ public class GameState {
 			}
 		}
 
-		// Horn of the Forsaken trigger
-		if (unitId == humanAvatarId && hornOfForsaken){
-			hornRobustness --;
-			if (hornRobustness <= 0){
-				hornRobustness = 0;
-				hornOfForsaken = false;
-				if (out != null){
-					BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken destroyed!", 3);
-				}
-			}
-		}
+	// Horn of the Forsaken trigger
+if (unitId == humanAvatarId && hornOfForsaken) {
+    hornRobustness--;
+
+    if (hornRobustness <= 0) {
+        hornRobustness = 0;
+        hornOfForsaken = false;
+        if (out != null) {
+            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken destroyed!", 3);
+        }
+    } else {
+        if (out != null) {
+            BasicCommands.addPlayer1Notification(
+                out,
+                "Horn of the Forsaken lost 1 robustness (" + hornRobustness + " left).",
+                2
+            );
+        }
+    }
+}
 	}
 }
