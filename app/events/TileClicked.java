@@ -64,6 +64,7 @@ public class TileClicked implements EventProcessor {
                     int y1 = selectedUnit.getPosition().getTiley();
                     boolean yFirst = decideMoveOrder(gameState,x1,y1,tilex, tiley);
                     BasicCommands.moveUnitToTile(out, selectedUnit, target, yFirst);
+                    sleep(250);
                     selectedUnit.setPositionByTile(target);
 
                     gameState.boardUnits.values().removeIf(v -> v.equals(selectedUnit));
@@ -118,6 +119,7 @@ public class TileClicked implements EventProcessor {
                                 int y1 = selectedUnit.getPosition().getTiley();
                                 boolean yFirst = decideMoveOrder(gameState,x1,y1,tilex, tiley);
                                 BasicCommands.moveUnitToTile(out, selectedUnit, target, yFirst);
+                                sleep(250);
 
                                 selectedUnit.setPositionByTile(target);
 
@@ -259,20 +261,24 @@ public class TileClicked implements EventProcessor {
             int hp = card.getBigCard().getHealth();
 
             EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
-            if (summonFx != null) BasicCommands.playEffectAnimation(out, summonFx, tile);
+            if (summonFx != null) {
+            BasicCommands.playEffectAnimation(out, summonFx, tile);
+            sleep(120);
+        }
 
             if (!spendHumanMana(out, gameState, cost)) return;
 
             unit.setPositionByTile(tile);
             unit.setAttack(atk);
             unit.setHealth(hp);
-            
+
             BasicCommands.drawUnit(out, unit, tile);
-            try {Thread.sleep(100);} catch (InterruptedException e) {e.printStackTrace();}
+            sleep(180);
 
             BasicCommands.setUnitAttack(out, unit, atk);
             sleep(80);
             UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
+            sleep(80);
 
             gameState.boardUnits.put(gameState.key(tilex, tiley), unit);
             gameState.uiUnitById.put(unitId, unit);
