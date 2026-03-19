@@ -44,21 +44,28 @@ public final class SimpleAI {
         resetUnitsForTurn(gameState, "AI");
         sleep(300);
 
-        // 1) summon as many affordable units as possible
-        boolean summonedSomething = true;
-        while (summonedSomething && !gameState.gameOver) {
-            summonedSomething = trySummonBestAffordableUnit(out, gameState);
-            if (summonedSomething) sleep(350);
-        }
+    // 1) cast as many affordable/useful spells as possible
+    boolean playedSomething = true;
+    while (playedSomething && !gameState.gameOver) {
+    playedSomething = tryCastBestAffordableSpell(out, gameState);
+    if (playedSomething) sleep(300);
+}
 
-        // 2) attack first if already adjacent
-        attackAllPossible(out, gameState);
+    // 2) summon as many affordable units as possible
+    boolean summonedSomething = true;
+    while (summonedSomething && !gameState.gameOver) {
+    summonedSomething = trySummonBestAffordableUnit(out, gameState);
+    if (summonedSomething) sleep(350);
+}
 
-        // 3) move each AI unit toward nearest human target, then try attacking again
-        moveAllUnitsTowardEnemy(out, gameState);
-        attackAllPossible(out, gameState);
+    // 3) attack first if already adjacent
+    attackAllPossible(out, gameState);
 
-        // 4) finish AI turn
+    // 4) move each AI unit toward nearest human target, then try attacking again
+    moveAllUnitsTowardEnemy(out, gameState);
+    attackAllPossible(out, gameState);
+
+    // 5) finish AI turn
         endAiTurn(out, gameState);
     }
 
@@ -98,6 +105,81 @@ public final class SimpleAI {
     // SUMMONING
     // ------------------------------------------------------------
 
+    private static boolean tryCastBestAffordableSpell(ActorRef out, GameState gameState) {
+    List<String> aiCards = getAiCardConfigs();
+    if (aiCards.isEmpty()) return false;
+
+    List<Card> affordableSpells = new ArrayList<>();
+    List<String> affordableSpellCfgs = new ArrayList<>();
+
+    for (String cfg : aiCards) {
+        Card c = BasicObjectBuilders.loadCard(cfg, 9100, Card.class);
+        if (c == null) continue;
+        if (c.isCreature()) continue;
+        if (c.getManacost() > gameState.aiMana) continue;
+
+        affordableSpells.add(c);
+        affordableSpellCfgs.add(cfg);
+    }
+
+    if (affordableSpells.isEmpty()) return false;
+
+    // Priority:
+    // 1. Beam Shock if a good target exists
+    // 2. True Strike if a target exists
+    // 3. Sundrop Elixir if an injured allied unit exists
+    for (int i = 0; i < affordableSpells.size(); i++) {
+        Card card = affordableSpells.get(i);
+        String name = normalize(card.getCardname());
+
+        if (name.equals("beam shock")) {
+            Unit target = chooseBestAiBeamShockTarget(gameState);
+            if (target == null) continue;
+
+            if (!StunRules.applyStunToUnit(out, gameState, target)) continue;
+
+            gameState.aiMana -= card.getManacost();
+            BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+            return true;
+        }
+
+        if (name.equals("true strike")) {
+            Unit target = chooseBestAiEnemyUnitTarget(gameState);
+            if (target == null) continue;
+
+            int hp = gameState.unitHealth.getOrDefault(target.getId(), 0);
+            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, hp - 2);
+
+            gameState.aiMana -= card.getManacost();
+            BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+            return true;
+        }
+
+        if (name.equals("sundrop elixir")) {
+            Unit target = chooseBestAiHealTarget(gameState);
+            if (target == null) continue;
+
+            boolean ok = HealSpellUtils.healUnit(
+                    out,
+                    gameState,
+                    target,
+                    5,
+                    "AI",
+                    false,
+                    null
+            );
+            if (!ok) continue;
+
+            gameState.aiMana -= card.getManacost();
+            BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+            return true;
+        }
+    }
+
+    return false;
+}
+    
+    
     private static boolean trySummonBestAffordableUnit(ActorRef out, GameState gameState) {
         List<String> aiCards = getAiCardConfigs();
         if (aiCards.isEmpty()) return false;
@@ -172,7 +254,6 @@ private static int[] chooseBestSummonTile(GameState gameState, Card card) {
     List<int[]> candidates = new ArrayList<>();
     java.util.Set<String> seen = new java.util.HashSet<>();
 
-    // collect all empty tiles adjacent to every AI-owned unit
     for (Unit unit : gameState.boardUnits.values()) {
         if (unit == null) continue;
 
@@ -212,7 +293,6 @@ private static int[] chooseBestSummonTile(GameState gameState, Card card) {
 
         int score = distanceToClosestAttackPosition(gameState, x, y, "HUMAN");
 
-        // prefer tiles that land adjacent to a human unit
         if (wouldBeAdjacentToEnemy(gameState, x, y, "HUMAN")) {
             score -= 20;
         }
@@ -588,6 +668,89 @@ private static int[] chooseBestSummonTile(GameState gameState, Card card) {
         }
         return res;
     }
+
+
+    private static Unit chooseBestAiEnemyUnitTarget(GameState gameState) {
+    Unit best = null;
+    int bestHp = Integer.MAX_VALUE;
+
+    for (Unit u : gameState.boardUnits.values()) {
+        if (u == null) continue;
+
+        int id = u.getId();
+        if (id == gameState.humanAvatarId || id == gameState.aiAvatarId) continue;
+
+        String owner = gameState.unitOwner.get(id);
+        if (!"HUMAN".equals(owner)) continue;
+
+        int hp = gameState.unitHealth.getOrDefault(id, 999);
+        if (hp < bestHp) {
+            bestHp = hp;
+            best = u;
+        }
+    }
+
+    return best;
+}
+
+private static Unit chooseBestAiBeamShockTarget(GameState gameState) {
+    Unit best = null;
+    int bestScore = Integer.MIN_VALUE;
+
+    for (Unit u : gameState.boardUnits.values()) {
+        if (u == null) continue;
+
+        int id = u.getId();
+        if (id == gameState.humanAvatarId || id == gameState.aiAvatarId) continue;
+
+        String owner = gameState.unitOwner.get(id);
+        if (!"HUMAN".equals(owner)) continue;
+
+        int score = 0;
+
+        // prefer units that have not yet acted
+        if (!gameState.unitHasMoved.getOrDefault(id, false)) score += 2;
+        if (!gameState.unitHadAttacked.getOrDefault(id, false)) score += 2;
+
+        // prefer stronger targets a bit
+        score += gameState.unitAttack.getOrDefault(id, 0);
+
+        if (score > bestScore) {
+            bestScore = score;
+            best = u;
+        }
+    }
+
+    return best;
+}
+
+private static Unit chooseBestAiHealTarget(GameState gameState) {
+    Unit best = null;
+    int bestMissingHealth = 0;
+
+    for (Unit u : gameState.boardUnits.values()) {
+        if (u == null) continue;
+
+        int id = u.getId();
+
+        // heal allied non-avatar units only
+        if (id == gameState.humanAvatarId || id == gameState.aiAvatarId) continue;
+
+        String owner = gameState.unitOwner.get(id);
+        if (!"AI".equals(owner)) continue;
+
+        int hp = gameState.unitHealth.getOrDefault(id, 0);
+        int maxHp = gameState.unitMaxHealth.getOrDefault(id, hp);
+        int missing = maxHp - hp;
+
+        if (missing > bestMissingHealth) {
+            bestMissingHealth = missing;
+            best = u;
+        }
+    }
+
+    return best;
+}
 
     private static boolean occupied(GameState gameState, int x, int y) {
         return gameState.boardUnits.containsKey(gameState.key(x, y));
