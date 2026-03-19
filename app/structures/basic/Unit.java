@@ -192,6 +192,16 @@ public class Unit {
 
 		// attacker deals damage
 		int defenderNewHp = defenderHp - attackerAtk;
+		//play hit animation on defender BEFORE checking death
+		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.hit);
+		try{
+			// give hit animation time to play 
+			Thread.sleep(400);
+		} catch (InterruptedException e){
+			e.printStackTrace();
+		}
+		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
+
 		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, enemy, defenderNewHp);
 
 		// if defender died, stop
@@ -209,6 +219,17 @@ public class Unit {
 		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
 
 		int attackerNewHp = attackerHp - defenderAtk;
+
+		//play hit on animation BEFORE checking death
+		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.hit);
+		try {
+			//give animation time to play
+			Thread.sleep(400);
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.idle);
+
 		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, this, attackerNewHp);
 	}
 }
