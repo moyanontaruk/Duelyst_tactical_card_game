@@ -1,3 +1,14 @@
+error id: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/OrderedCardLoader.java:java/util/List#
+file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/OrderedCardLoader.java
+empty definition using pc, found symbol in pc: java/util/List#
+empty definition using semanticdb
+empty definition using fallback
+non-local guesses:
+
+offset: 647
+uri: file://<HOME>/Documents/GitHub/IT+%20Group%20Project/MSc-IT-plus-2026-LB01-T/app/utils/OrderedCardLoader.java
+text:
+```scala
 package utils;
 
 import java.io.File;
@@ -27,13 +38,13 @@ public class OrderedCardLoader {
 		List<Card> cardsInDeck = new ArrayList<Card>(20);
 		
 		// sort for loading 
-		List<String> filenames = Arrays.asList(new File(cardsDIR).list());
+		@@List<String> filenames = Arrays.asList(new File(cardsDIR).list());
 		Collections.sort(filenames);
 
 		int cardID = 1;
 		for (int i = 0; i < copies; i++){
 			for (String filename : filenames){
-				if (filename.startsWith("1_")){
+				if (filename.startsWith("_1")){
 					// this is a deck 1 card
 					cardsInDeck.add(BasicObjectBuilders.loadCard(cardsDIR + filename, cardID ++,  Card.class));
 				}
@@ -64,13 +75,10 @@ public class OrderedCardLoader {
 	
 		List<Card> cardsInDeck = new ArrayList<Card>(20);
 		
-		List<String> filenames = Arrays.asList(new File(cardsDIR).list());
-		Collections.sort(filenames);
-
 		int cardID = 1;
 		for (int i = 0; i < copies; i++){
 			for (String filename : filenames){
-				if (filename.startsWith("2_")){
+				if (filename.startsWith("_1")){
 					// this is a deck 1 card
 					cardsInDeck.add(BasicObjectBuilders.loadCard(cardsDIR + filename, cardID ++,  Card.class));
 				}
@@ -87,9 +95,15 @@ public class OrderedCardLoader {
 			}
 		}
 		*/
-		//randomization 
-		Collections.shuffle(cardsInDeck);
+		
 		return cardsInDeck;
 	}
 	
 }
+
+```
+
+
+#### Short summary: 
+
+empty definition using pc, found symbol in pc: java/util/List#
