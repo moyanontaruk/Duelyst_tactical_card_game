@@ -411,24 +411,31 @@ public class TileClicked implements EventProcessor {
         }
 
         // Beam Shock
-        if (name.equals("beamshock")) {
-            Unit target = gameState.boardUnits.get(gameState.key(tilex, tiley));
-            if (target == null) return;
+        if (name.equals("beam shock") || name.equals("beamshock")) {
+        Unit target = gameState.boardUnits.get(gameState.key(tilex, tiley));
+        if (target == null) return;
 
-            int targetId = target.getId();
+        int targetId = target.getId();
 
-            if (targetId == gameState.humanAvatarId || targetId == gameState.aiAvatarId) return;
+        if (targetId == gameState.humanAvatarId || targetId == gameState.aiAvatarId) return;
 
-            String owner = gameState.unitOwner.get(targetId);
-            if (!"AI".equals(owner)) return;
+        String owner = gameState.unitOwner.get(targetId);
+        if (!"AI".equals(owner)) return;
 
-            if (!spendHumanMana(out, gameState, cost)) return;
+        if (!spendHumanMana(out, gameState, cost)) return;
 
-            if (!StunRules.applyStunToUnit(out, gameState, target)) return;
+        Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
+        EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_buff);
+        if (fx != null) {
+        BasicCommands.playEffectAnimation(out, fx, tile);
+        sleep(120);
+    }
 
-            consumeSelectedCardAndClear(out, gameState, selectedPos);
-            return;
-        }
+    if (!StunRules.applyStunToUnit(out, gameState, target)) return;
+
+    consumeSelectedCardAndClear(out, gameState, selectedPos);
+    return;
+}
 
         // Dark Terminus
         if (name.equals("dark terminus")) {
