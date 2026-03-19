@@ -14,6 +14,7 @@ import utils.UnitDeathUtils;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 
 public class Initialize implements EventProcessor {
 
@@ -192,6 +193,9 @@ public class Initialize implements EventProcessor {
                 gameState.humanDeck.add(cfg);
                 gameState.humanDeck.add(cfg);
             }
+
+            //randomizing from OrderedCardLoader;
+            Collections.shuffle(gameState.humanDeck);
 
             // draw starting hand (up to 3 cards)
             int startingDraw = Math.min(3, gameState.humanDeck.size());
