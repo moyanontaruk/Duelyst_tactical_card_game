@@ -10,10 +10,15 @@ import utils.HighlightUtils;
 import utils.SpellTargetRules;
 
 import structures.basic.Tile;
+import structures.basic.Unit;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import java.util.HashSet;
+import java.util.Set;
+import structures.basic.Unit;
 
 
 public class CardClicked implements EventProcessor {
@@ -90,29 +95,40 @@ public class CardClicked implements EventProcessor {
 
     
     
-    private List<int[]> getHumanSummonTiles(GameState gameState) {
-        List<int[]> result = new ArrayList<>();
+private List<int[]> getHumanSummonTiles(GameState gameState) {
+    List<int[]> result = new ArrayList<>();
+    java.util.Set<String> seen = new java.util.HashSet<>();
 
-        int[] avatarPos = gameState.getAvatarPosition("HUMAN");
-        int avatarX = avatarPos[0];
-        int avatarY = avatarPos[1];
+    for (Unit unit : gameState.boardUnits.values()) {
+        if (unit == null) continue;
+
+        String owner = gameState.unitOwner.get(unit.getId());
+        if (!"HUMAN".equals(owner)) continue;
+
+        int unitX = unit.getPosition().getTilex();
+        int unitY = unit.getPosition().getTiley();
 
         for (int dx = -1; dx <= 1; dx++) {
             for (int dy = -1; dy <= 1; dy++) {
                 if (dx == 0 && dy == 0) continue;
 
-                int x = avatarX + dx;
-                int y = avatarY + dy;
+                int x = unitX + dx;
+                int y = unitY + dy;
 
                 if (x < 0 || x >= 9 || y < 0 || y >= 5) continue;
                 if (gameState.boardUnits.containsKey(gameState.key(x, y))) continue;
 
+                String key = gameState.key(x, y);
+                if (seen.contains(key)) continue;
+
+                seen.add(key);
                 result.add(new int[]{x, y});
             }
         }
-
-        return result;
     }
+
+    return result;
+}
 
     private void highlightTilesWhite(ActorRef out, GameState gameState, List<int[]> tiles) {
         if (tiles == null || tiles.isEmpty()) return;
