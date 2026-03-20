@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import utils.StaticConfFiles;
 
@@ -420,48 +419,26 @@ sleep(150);
         if (!canMoveToTile(gameState, unit, toX, toY)) return false;
 
         int id = unit.getId();
-        String newKey = gameState.key(toX, toY);
+        String destinationKey = gameState.key(toX, toY);
 
-        Unit occupant = gameState.boardUnits.get(newKey);
+        Unit occupant = gameState.boardUnits.get(destinationKey);
         if (occupant != null && occupant.getId() != id) return false;
 
         int fromX = unit.getPosition().getTilex();
         int fromY = unit.getPosition().getTiley();
-        String oldKey = gameState.unitPositionKey.get(id);
 
         if (toX == fromX && toY == fromY) return false;
 
-        // Remove stale entries for this unit id from board map
-        List<String> staleKeys = new ArrayList<>();
-        for (Map.Entry<String, Unit> e : gameState.boardUnits.entrySet()) {
-            Unit u = e.getValue();
-            if (u != null && u.getId() == id) {
-                staleKeys.add(e.getKey());
-            }
-        }
-        for (String key : staleKeys) {
-            gameState.boardUnits.remove(key);
-        }
-
         Tile dest = BasicObjectBuilders.loadTile(toX, toY);
-        boolean yFirst = decideMoveOrder(gameState, fromX, fromY, toX, toY);
+        boolean yFirst = MovementUtils.decideMoveOrder(gameState, fromX, fromY, toX, toY);
 
         BasicCommands.moveUnitToTile(out, unit, dest, yFirst);
-        sleep(550);
+        sleep(MovementUtils.estimateMoveDurationMs(fromX, fromY, toX, toY));
 
         unit.setPositionByTile(dest);
         sleep(100);
 
-        gameState.boardUnits.put(newKey, unit);
-        gameState.unitPositionKey.put(id, newKey);
-
-        // clean old key if still around
-        if (oldKey != null && !oldKey.equals(newKey)) {
-            Unit oldOccupant = gameState.boardUnits.get(oldKey);
-            if (oldOccupant != null && oldOccupant.getId() == id) {
-                gameState.boardUnits.remove(oldKey);
-            }
-        }
+        MovementUtils.syncUnitBoardPosition(gameState, unit, toX, toY);
 
         return true;
     }
@@ -818,32 +795,6 @@ private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit 
 
         return best;
     }
-
-private static boolean decideMoveOrder(GameState gameState, int x1, int y1, int x2, int y2) {
-    int dx = x2 - x1;
-    int dy = y2 - y1;
-
-    // straight move: order does not matter
-    if (dx == 0 || dy == 0) {
-        return true;
-    }
-
-    // Option 1: move X first, then Y -> intermediate tile (x2, y1)
-    Unit xFirstBlocker = gameState.boardUnits.get(gameState.key(x2, y1));
-
-    // Option 2: move Y first, then X -> intermediate tile (x1, y2)
-    Unit yFirstBlocker = gameState.boardUnits.get(gameState.key(x1, y2));
-
-    boolean xFirstFree = (xFirstBlocker == null);
-    boolean yFirstFree = (yFirstBlocker == null);
-
-    // return true means Y-first in your code
-    if (yFirstFree && !xFirstFree) return true;
-    if (xFirstFree && !yFirstFree) return false;
-
-    // if both free, either is okay
-    return true;
-}
 
     private static boolean occupied(GameState gameState, int x, int y) {
         return gameState.boardUnits.containsKey(gameState.key(x, y));
