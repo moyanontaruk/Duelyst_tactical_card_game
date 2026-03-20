@@ -32,7 +32,9 @@ public class UnitDeathUtils {
             gameState.damageOnAvatarTrigger(out, unitId, damage);
         }
 
-        // 1) Update server-side health state
+
+        //debug health going to neg
+        newHealth = Math.max(0, newHealth);
         gameState.unitHealth.put(unitId, newHealth);
 
         // 2) Update UI health label
