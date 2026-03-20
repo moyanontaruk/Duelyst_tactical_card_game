@@ -51,10 +51,35 @@ public static void setUnitHealthAndCheckDeath(ActorRef out, GameState gameState,
         if (out != null) {
             BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
         }
-    } else if (unitId == gameState.aiAvatarId) {
-        gameState.aiHealth = clampedHealth;
-        if (out != null) {
-            BasicCommands.setPlayer2Health(out, new Player(gameState.aiHealth, gameState.aiMana));
+
+
+        //debug health going to neg
+        newHealth = Math.max(0, newHealth);
+        gameState.unitHealth.put(unitId, newHealth);
+
+        // 2) Update UI health label
+        if (out != null){
+            BasicCommands.setUnitHealth(out, unit, newHealth);
+        }
+
+        // --- story card 14 damage/healing ----
+        // 3) if unit is avatar, change health
+        if (unitId == gameState.humanAvatarId){
+            gameState.humanHealth = newHealth;
+            if (out != null) {
+                BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
+            }
+        } else if (unitId == gameState.aiAvatarId){
+            gameState.aiHealth = newHealth;
+            if (out != null) {
+                BasicCommands.setPlayer2Health(out, new Player(gameState.aiHealth, gameState.aiMana));
+            }
+        }
+
+        // 4) If health <= 0, kill the unit
+        if (newHealth <= 0) {
+            killUnit(out, gameState, unit);
+
         }
     }
 
