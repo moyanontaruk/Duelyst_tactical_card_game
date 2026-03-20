@@ -24,55 +24,47 @@ public final class OpeningGambitResolver {
     /**
      * Call this right after a unit is successfully spawned on the board.
      */
-    public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUnit, String cardName) {
-        if (summonedUnit == null || cardName == null) return;
+public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUnit, String cardName) {
+    if (summonedUnit == null || cardName == null) return;
 
-        String name = cardName.trim().toLowerCase();
+    String name = cardName.trim().toLowerCase();
+    String owner = gameState.unitOwner.get(summonedUnit.getId());
+    if (owner == null) return;
 
-        // ------------------------------------------------------------
-        // Gloom Chaser: summon a 1/1 Wraithling directly behind this unit.
-        // (Human "behind" = x-1)
-        // ------------------------------------------------------------
-        if (name.equals("gloom chaser")) {
-            int x = summonedUnit.getPosition().getTilex();
-            int y = summonedUnit.getPosition().getTiley();
+    boolean isHuman = "HUMAN".equals(owner);
 
-            int bx = x - 1;
-            int by = y;
+    if (name.equals("gloom chaser")) {
+        int x = summonedUnit.getPosition().getTilex();
+        int y = summonedUnit.getPosition().getTiley();
 
-            if (isOnBoard(bx, by) && !gameState.boardUnits.containsKey(gameState.key(bx, by))) {
-                SummonUtils.spawnWraithling(out, gameState, bx, by, "HUMAN");
-            }
-            return;
+        int bx = isHuman ? x - 1 : x + 1;
+        int by = y;
+
+        if (isOnBoard(bx, by) && !gameState.boardUnits.containsKey(gameState.key(bx, by))) {
+            SummonUtils.spawnWraithling(out, gameState, bx, by, owner);
         }
-
-        // ------------------------------------------------------------
-        // Nightsorrow Assassin:
-        // destroy a nearby enemy minion that is damaged (hp < max hp)
-        // We pick the first adjacent enemy that matches.
-        // ------------------------------------------------------------
-        if (name.equals("nightsorrow assassin")) {
-            Unit target = firstAdjacentEnemyBelowMax(gameState, summonedUnit, "HUMAN");
-            if (target != null) {
-                // set to 0 triggers death logic (#13)
-                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
-            }
-            return;
-        }
-
-        // ------------------------------------------------------------
-        // Silverguard Squire:
-        // give +1/+1 to allied units directly in-front and behind.
-        // (Human: in-front = x+1, behind = x-1)
-        // ------------------------------------------------------------
-        if (name.equals("silverguard squire")) {
-            int x = summonedUnit.getPosition().getTilex();
-            int y = summonedUnit.getPosition().getTiley();
-
-            buffIfAllied(out, gameState, x + 1, y, "HUMAN");
-            buffIfAllied(out, gameState, x - 1, y, "HUMAN");
-        }
+        return;
     }
+
+    if (name.equals("nightsorrow assassin")) {
+        Unit target = firstAdjacentEnemyBelowMax(gameState, summonedUnit, owner);
+        if (target != null) {
+            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
+        }
+        return;
+    }
+
+    if (name.equals("silverguard squire")) {
+        int x = summonedUnit.getPosition().getTilex();
+        int y = summonedUnit.getPosition().getTiley();
+
+        int frontX = isHuman ? x + 1 : x - 1;
+        int backX  = isHuman ? x - 1 : x + 1;
+
+        buffIfAllied(out, gameState, frontX, y, owner);
+        buffIfAllied(out, gameState, backX, y, owner);
+    }
+}
 
     // ------------------------------------------------------------
     // Helpers
