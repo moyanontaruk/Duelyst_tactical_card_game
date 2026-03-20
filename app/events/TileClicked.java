@@ -229,85 +229,61 @@ public class TileClicked implements EventProcessor {
         }
 
         // Unit card summon
-        if (gameState.selectedCardIsUnit) {
+if (gameState.selectedCardIsUnit) {
 
-            if (!card.isCreature()) return;
-            if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return;
-            if (!gameState.highlightedMovedTiles.contains(gameState.key(tilex, tiley))) return;
+    if (!card.isCreature()) return;
+    if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return;
+    if (!gameState.highlightedMovedTiles.contains(gameState.key(tilex, tiley))) return;
 
-            int cost = card.getManacost();
-            if (gameState.humanMana < cost) {
-                BasicCommands.addPlayer1Notification(out, "Not enough mana", 2);
-                return;
-            }
+    int cost = card.getManacost();
+    if (gameState.humanMana < cost) {
+        BasicCommands.addPlayer1Notification(out, "Not enough mana", 2);
+        return;
+    }
 
-            if (card.getBigCard() == null || card.getUnitConfig() == null) {
-                BasicCommands.addPlayer1Notification(out, "Unit data is invalid", 2);
-                HighlightUtils.clearSelectionAndHighlights(out, gameState);
-                return;
-            }
+    if (card.getBigCard() == null || card.getUnitConfig() == null) {
+        BasicCommands.addPlayer1Notification(out, "Unit data is invalid", 2);
+        HighlightUtils.clearSelectionAndHighlights(out, gameState);
+        return;
+    }
 
-            Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
-            int unitId = gameState.allocateUnitId();
-            Unit unit = BasicObjectBuilders.loadUnit(card.getUnitConfig(), unitId, BetterUnit.class);
+    Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
+    EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
+    if (summonFx != null) {
+        BasicCommands.playEffectAnimation(out, summonFx, tile);
+        sleep(120);
+    }
 
-            if (unit == null) {
-                BasicCommands.addPlayer1Notification(out, "Failed to summon unit", 2);
-                HighlightUtils.clearSelectionAndHighlights(out, gameState);
-                return;
-            }
+    if (!spendHumanMana(out, gameState, cost)) return;
 
-            int atk = card.getBigCard().getAttack();
-            int hp = card.getBigCard().getHealth();
+    int atk = card.getBigCard().getAttack();
+    int hp = card.getBigCard().getHealth();
 
-            EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
-            if (summonFx != null) {
-            BasicCommands.playEffectAnimation(out, summonFx, tile);
-            sleep(120);
-        }
+    Unit unit = SummonUtils.spawnUnit(
+            out,
+            gameState,
+            card.getUnitConfig(),
+            tilex,
+            tiley,
+            atk,
+            hp,
+            "HUMAN"
+    );
 
-            if (!spendHumanMana(out, gameState, cost)) return;
+    if (unit == null) {
+        BasicCommands.addPlayer1Notification(out, "Failed to summon unit", 2);
+        HighlightUtils.clearSelectionAndHighlights(out, gameState);
+        return;
+    }
 
-            unit.setPositionByTile(tile);
-            unit.setAttack(atk);
-            unit.setHealth(hp);
+    // keep card-name registration for deathwatch/opening-gambit logic
+    gameState.unitName.put(unit.getId(), card.getCardname());
 
-            BasicCommands.drawUnit(out, unit, tile);
-            sleep(180);
+    OpeningGambitResolver.onSummoned(out, gameState, unit, card.getCardname());
 
-            BasicCommands.setUnitAttack(out, unit, atk);
-            sleep(80);
-            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
-            sleep(80);
-
-            gameState.boardUnits.put(gameState.key(tilex, tiley), unit);
-            gameState.uiUnitById.put(unitId, unit);
-
-            gameState.unitAttack.put(unitId, atk);
-            gameState.unitPositionKey.put(unitId, gameState.key(tilex, tiley));
-
-            gameState.unitMaxHealth.put(unitId, hp);
-            gameState.unitOwner.put(unitId, "HUMAN");
-            gameState.unitName.put(unitId, card.getCardname());
-
-            String unitNameLower = card.getCardname() == null ? "" : card.getCardname().trim().toLowerCase();
-            if (unitNameLower.equals("rock pulveriser")
-                    || unitNameLower.equals("swamp entangler")
-                    || unitNameLower.equals("silverguard knight")
-                    || unitNameLower.equals("ironcliff guardian")) {
-                gameState.provokeUnitIds.add(unitId);
-            }
-            boolean hasRush = (unit instanceof BetterUnit) && ((BetterUnit) unit).getHasRush();
-            if (!hasRush) {
-                gameState.unitHasMoved.put(unitId, true);
-                gameState.unitHadAttacked.put(unitId, true);
-            }
-
-            OpeningGambitResolver.onSummoned(out, gameState, unit, card.getCardname());
-
-            consumeSelectedCardAndClear(out, gameState, selectedPos);
-            return;
-        }
+    consumeSelectedCardAndClear(out, gameState, selectedPos);
+    return;
+}
 
         // Spell card logic
         if (card.isCreature()) return;
