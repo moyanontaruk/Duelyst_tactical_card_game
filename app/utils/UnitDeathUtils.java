@@ -189,8 +189,14 @@ public static void killUnit(ActorRef out, GameState gameState, Unit unit) {
             if (out != null) BasicCommands.setUnitAttack(out, aliveUnit, curAtk + 1);
 
             int curHp = gameState.unitHealth.getOrDefault(aliveId, 0);
-            gameState.unitHealth.put(aliveId, curHp + 1);
-            if (out != null) BasicCommands.setUnitHealth(out, aliveUnit, curHp + 1);
+            int maxHp = gameState.unitMaxHealth.getDeault(aliveId, curHp);
+
+            int newHp = Math.min(curHp + 1, maxHp);
+            gameState.unitHealth.put(aliveId,newHp);
+
+            if (out != null) {
+                BasicCommands.setUnitHealth(out, aliveUnit, newHp);
+            }
         }
 
         else if (name.equals("shadowdancer")) {
