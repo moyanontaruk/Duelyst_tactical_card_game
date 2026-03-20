@@ -21,6 +21,7 @@ import utils.OpeningGambitResolver;
 import utils.SpellTargetRules;
 import utils.DirectDamageSpellUtils;
 import utils.HealSpellUtils;
+import utils.MovementUtils;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -62,18 +63,11 @@ public class TileClicked implements EventProcessor {
 
                     int x1 = selectedUnit.getPosition().getTilex();
                     int y1 = selectedUnit.getPosition().getTiley();
-                    boolean yFirst = decideMoveOrder(gameState,x1,y1,tilex, tiley);
+                    boolean yFirst = MovementUtils.decideMoveOrder(gameState, x1, y1, tilex, tiley);
                     BasicCommands.moveUnitToTile(out, selectedUnit, target, yFirst);
-                    sleep(250);
+                    sleep(MovementUtils.estimateMoveDurationMs(x1, y1, tilex, tiley));
                     selectedUnit.setPositionByTile(target);
-
-                    gameState.boardUnits.values().removeIf(v -> v.equals(selectedUnit));
-                    gameState.boardUnits.put(gameState.key(tilex, tiley), selectedUnit);
-
-                    gameState.unitPositionKey.put(
-                            selectedUnit.getId(),
-                            gameState.key(tilex, tiley)
-                    );
+                    MovementUtils.syncUnitBoardPosition(gameState, selectedUnit, tilex, tiley);
 
                     gameState.unitHasMoved.put(selectedUnit.getId(), true);
 
@@ -117,17 +111,22 @@ public class TileClicked implements EventProcessor {
                                 gameState.pendingAttackAfterMove.put(selectedUnit.getId(), enemy.getId());
                                 int x1 = selectedUnit.getPosition().getTilex();
                                 int y1 = selectedUnit.getPosition().getTiley();
-                                boolean yFirst = decideMoveOrder(gameState,x1,y1,tilex, tiley);
+                                boolean yFirst = MovementUtils.decideMoveOrder(
+                                        gameState,
+                                        x1,
+                                        y1,
+                                        moveTile[0],
+                                        moveTile[1]
+                                );
                                 BasicCommands.moveUnitToTile(out, selectedUnit, target, yFirst);
-                                sleep(250);
+                                sleep(MovementUtils.estimateMoveDurationMs(x1, y1, moveTile[0], moveTile[1]));
 
                                 selectedUnit.setPositionByTile(target);
-
-                                gameState.boardUnits.values().removeIf(v -> v.equals(selectedUnit));
-                                gameState.boardUnits.put(gameState.key(moveTile[0], moveTile[1]), selectedUnit);
-                                gameState.unitPositionKey.put(
-                                        selectedUnit.getId(),
-                                        gameState.key(moveTile[0], moveTile[1])
+                                MovementUtils.syncUnitBoardPosition(
+                                        gameState,
+                                        selectedUnit,
+                                        moveTile[0],
+                                        moveTile[1]
                                 );
                                 gameState.unitHasMoved.put(selectedUnit.getId(), true);
 
@@ -699,27 +698,6 @@ private void triggerHornOnHit(ActorRef out, GameState gameState, Unit attacker) 
         try {
             Thread.sleep(ms);
         } catch (InterruptedException ignored) {
-        }
-    }
-    private boolean decideMoveOrder(GameState gameState, int x1, int y1, int x2, int y2) {
-        int dx = x2 - x1;
-        int dy = y2 - y1;
-
-        // Only one axis needs to move, order doesn't matter
-        if (dx == 0 || dy == 0) {
-            return true;
-        }
-
-        // Intermediate point if moving X first: (x2, y1)
-        boolean moveXFirstBlocked = gameState.boardUnits.containsKey(gameState.key(x2, y1));
-
-
-        if (moveXFirstBlocked ) {
-            //move Y First
-            return true;
-        }else
-        {
-            return false;
         }
     }
 }

@@ -246,6 +246,15 @@ function drawUnit(message) {
 	
 	//console.log(message.unit);
 
+	var existingContainer = spriteContainers.get(message.unit.id);
+	if (existingContainer) {
+		g.stage.removeChild(existingContainer);
+		spriteContainers.delete(message.unit.id);
+		sprites.delete(message.unit.id);
+		attackLabels.delete(message.unit.id);
+		healthLabels.delete(message.unit.id);
+	}
+
 	var unitContainer = new PIXI.Container();
 	
 	// Draw unit in idle stance
@@ -351,8 +360,11 @@ function moveUnit(unitID, xTile, yTile) {
 }
 
 function moveUnitToTile(message) {
-	
-	activeMoves.set(message.unitID, message);
+	if (!message || !message.unit || message.unit.id === undefined) {
+		return;
+	}
+
+	activeMoves.set(message.unit.id, message);
 }
 
 // Performs a single frame move towards the target destination for a sprite
@@ -361,6 +373,10 @@ function executeMoveStep(message) {
 	
 	var targetUnit = sprites.get(message.unit.id);
 	var targetContainer = spriteContainers.get(message.unit.id);
+
+	if (!targetUnit || !targetContainer) {
+		return true;
+	}
 	
 	if (message.unit.animation != "move") {
 		targetUnit.stopAnimation();
