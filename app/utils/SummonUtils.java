@@ -27,8 +27,15 @@ public final class SummonUtils {
                                  int atk, int hp,
                                  String owner) {
 
-        // occupancy check
+         // occupancy check
         if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return null;
+
+        String key = gameState.key(tilex, tiley);
+        if (gameState.boardUnits.containsKey(key)) {
+        return null;
+}
+
+       
 
         int unitId = gameState.allocateUnitId();
         Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
