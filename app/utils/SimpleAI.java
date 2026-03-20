@@ -414,57 +414,57 @@ sleep(150);
         return score;
     }
 
-    private static boolean moveUnit(ActorRef out, GameState gameState, Unit unit, int toX, int toY) {
-        if (unit == null) return false;
-        if (!isOnBoard(toX, toY)) return false;
-        if (!canMoveToTile(gameState, unit, toX, toY)) return false;
+private static boolean moveUnit(ActorRef out, GameState gameState, Unit unit, int toX, int toY) {
+    if (unit == null) return false;
+    if (!isOnBoard(toX, toY)) return false;
+    if (!canMoveToTile(gameState, unit, toX, toY)) return false;
 
-        int id = unit.getId();
-        String newKey = gameState.key(toX, toY);
+    int id = unit.getId();
 
-        Unit occupant = gameState.boardUnits.get(newKey);
-        if (occupant != null && occupant.getId() != id) return false;
+    int fromX = unit.getPosition().getTilex();
+    int fromY = unit.getPosition().getTiley();
 
-        int fromX = unit.getPosition().getTilex();
-        int fromY = unit.getPosition().getTiley();
-        String oldKey = gameState.unitPositionKey.get(id);
+    if (toX == fromX && toY == fromY) return false;
 
-        if (toX == fromX && toY == fromY) return false;
+    String oldKey = gameState.unitPositionKey.get(id);
+    String newKey = gameState.key(toX, toY);
 
-        // Remove stale entries for this unit id from board map
-        List<String> staleKeys = new ArrayList<>();
-        for (Map.Entry<String, Unit> e : gameState.boardUnits.entrySet()) {
-            Unit u = e.getValue();
-            if (u != null && u.getId() == id) {
-                staleKeys.add(e.getKey());
-            }
+    Unit destOccupant = gameState.boardUnits.get(newKey);
+    if (destOccupant != null && destOccupant.getId() != id) return false;
+
+    Tile dest = BasicObjectBuilders.loadTile(toX, toY);
+    boolean yFirst = decideMoveOrder(gameState, fromX, fromY, toX, toY);
+
+    // remove only from the old tile
+    if (oldKey != null) {
+        Unit oldOccupant = gameState.boardUnits.get(oldKey);
+        if (oldOccupant != null && oldOccupant.getId() == id) {
+            gameState.boardUnits.remove(oldKey);
         }
-        for (String key : staleKeys) {
-            gameState.boardUnits.remove(key);
-        }
-
-        Tile dest = BasicObjectBuilders.loadTile(toX, toY);
-        boolean yFirst = decideMoveOrder(gameState, fromX, fromY, toX, toY);
-
-        BasicCommands.moveUnitToTile(out, unit, dest, yFirst);
-        sleep(550);
-
-        unit.setPositionByTile(dest);
-        sleep(100);
-
-        gameState.boardUnits.put(newKey, unit);
-        gameState.unitPositionKey.put(id, newKey);
-
-        // clean old key if still around
-        if (oldKey != null && !oldKey.equals(newKey)) {
-            Unit oldOccupant = gameState.boardUnits.get(oldKey);
-            if (oldOccupant != null && oldOccupant.getId() == id) {
-                gameState.boardUnits.remove(oldKey);
-            }
-        }
-
-        return true;
     }
+
+    BasicCommands.moveUnitToTile(out, unit, dest, yFirst);
+    sleep(550);
+
+    unit.setPositionByTile(dest);
+    sleep(100);
+
+    // re-check destination before committing in case state changed
+    Unit checkAgain = gameState.boardUnits.get(newKey);
+    if (checkAgain != null && checkAgain.getId() != id) {
+        // restore old mapping if needed
+        if (oldKey != null) {
+            gameState.boardUnits.put(oldKey, unit);
+            gameState.unitPositionKey.put(id, oldKey);
+        }
+        return false;
+    }
+
+    gameState.boardUnits.put(newKey, unit);
+    gameState.unitPositionKey.put(id, newKey);
+
+    return true;
+}
 
 private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit unit) {
     List<int[]> validTiles = new ArrayList<>();
@@ -753,7 +753,7 @@ private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit 
         return false;
     }
 
-    private static boolean canMoveToTile(GameState gameState, Unit unit, int toX, int toY) {
+private static boolean canMoveToTile(GameState gameState, Unit unit, int toX, int toY) {
     if (unit == null) return false;
     if (!isOnBoard(toX, toY)) return false;
 
@@ -776,9 +776,6 @@ private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit 
     int absDx = Math.abs(dx);
     int absDy = Math.abs(dy);
 
-    // Allowed shapes:
-    // 1 step diagonal
-    // 1 or 2 steps straight
     boolean diagonalOne = (absDx == 1 && absDy == 1);
     boolean straightOne = ((absDx == 1 && absDy == 0) || (absDx == 0 && absDy == 1));
     boolean straightTwo = ((absDx == 2 && absDy == 0) || (absDx == 0 && absDy == 2));
@@ -787,12 +784,24 @@ private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit 
         return false;
     }
 
-    // one-step move: only destination matters
-    if (straightOne || diagonalOne) {
+    // one-step straight move: destination already checked
+    if (straightOne) {
         return true;
     }
 
-    // two-step straight move: middle tile must also be clear
+    // one-step diagonal move:
+    // require at least one clear corner path
+    if (diagonalOne) {
+        Unit xFirstBlocker = gameState.boardUnits.get(gameState.key(toX, fromY));
+        Unit yFirstBlocker = gameState.boardUnits.get(gameState.key(fromX, toY));
+
+        boolean xFirstFree = (xFirstBlocker == null || xFirstBlocker.getId() == id);
+        boolean yFirstFree = (yFirstBlocker == null || yFirstBlocker.getId() == id);
+
+        return xFirstFree || yFirstFree;
+    }
+
+    // two-step straight move: middle tile must be free
     int midX = fromX + Integer.signum(dx);
     int midY = fromY + Integer.signum(dy);
 
@@ -828,20 +837,17 @@ private static boolean decideMoveOrder(GameState gameState, int x1, int y1, int 
         return true;
     }
 
-    // Option 1: move X first, then Y -> intermediate tile (x2, y1)
     Unit xFirstBlocker = gameState.boardUnits.get(gameState.key(x2, y1));
-
-    // Option 2: move Y first, then X -> intermediate tile (x1, y2)
     Unit yFirstBlocker = gameState.boardUnits.get(gameState.key(x1, y2));
 
     boolean xFirstFree = (xFirstBlocker == null);
     boolean yFirstFree = (yFirstBlocker == null);
 
-    // return true means Y-first in your code
+    // return true means Y-first
     if (yFirstFree && !xFirstFree) return true;
     if (xFirstFree && !yFirstFree) return false;
 
-    // if both free, either is okay
+    // if both are free, prefer Y-first
     return true;
 }
 
