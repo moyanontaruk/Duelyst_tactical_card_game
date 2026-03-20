@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import commands.BasicCommands;
 import structures.GameState;
 import structures.basic.Card;
+import structures.basic.EffectAnimation;
 import structures.basic.Player;
 import structures.basic.Tile;
 import structures.basic.Unit;
@@ -15,6 +16,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import utils.StaticConfFiles;
 
 public final class SimpleAI {
 
@@ -72,60 +74,76 @@ public final class SimpleAI {
     // MAIN UNIT PLAY LOOP
     // ------------------------------------------------------------
 
-    private static void playUnits(ActorRef out, GameState gameState) {
-        List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
+   private static void playUnits(ActorRef out, GameState gameState) {
+    // Phase 1: attack with units that are already adjacent
+    attackWithAdjacentUnits(out, gameState);
 
-        for (Unit unit : aiUnits) {
-            if (unit == null) continue;
-            if (gameState.gameOver) return;
-            if (!"AI".equals(gameState.activePlayer)) return;
+    // Small pause between phases
+    sleep(200);
 
-            int id = unit.getId();
+    // Phase 2: move units that still can move
+    moveUnitsTowardEnemies(out, gameState);
 
-            if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
+    // Let all move animations fully settle before any attacks
+    sleep(500);
 
-            // If already next to an enemy, attack first
-            Unit adjacentEnemy = findAdjacentEnemy(gameState, unit, "HUMAN");
-            if (adjacentEnemy != null) {
-                doAttack(out, gameState, unit, adjacentEnemy);
-                sleep(150);
-                continue;
-            }
+    // Phase 3: attack after movement
+    attackWithAdjacentUnits(out, gameState);
+}
 
-            // If provoked and not adjacent, cannot move away to do something else
-            if (HighlightUtils.isProvoked(gameState, unit)) {
-                continue;
-            }
 
-            boolean movedThisTurn = false;
+private static void attackWithAdjacentUnits(ActorRef out, GameState gameState) {
+    List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
 
-            if (!gameState.unitHasMoved.getOrDefault(id, false)) {
-            int[] bestMove = chooseBestMoveTile(gameState, unit);
-            if (bestMove != null) {
-            boolean moved = moveUnit(out, gameState, unit, bestMove[0], bestMove[1]);
-            if (moved) {
+    for (Unit unit : aiUnits) {
+        if (unit == null) continue;
+        if (gameState.gameOver) return;
+        if (!"AI".equals(gameState.activePlayer)) return;
+
+        int id = unit.getId();
+
+        if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
+
+        Unit target = findAdjacentEnemy(gameState, unit, "HUMAN");
+        if (target == null) continue;
+
+        doAttack(out, gameState, unit, target);
+        sleep(180);
+    }
+}
+
+private static void moveUnitsTowardEnemies(ActorRef out, GameState gameState) {
+    List<Unit> aiUnits = getUnitsOwnedBy(gameState, "AI");
+
+    for (Unit unit : aiUnits) {
+        if (unit == null) continue;
+        if (gameState.gameOver) return;
+        if (!"AI".equals(gameState.activePlayer)) return;
+
+        int id = unit.getId();
+
+        if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
+        if (gameState.unitHasMoved.getOrDefault(id, false)) continue;
+
+        // If already next to an enemy, do not move in this phase
+        Unit adjacentEnemy = findAdjacentEnemy(gameState, unit, "HUMAN");
+        if (adjacentEnemy != null) continue;
+
+        // If provoked and not adjacent, cannot move
+        if (HighlightUtils.isProvoked(gameState, unit)) continue;
+
+        int[] bestMove = chooseBestMoveTile(gameState, unit);
+        if (bestMove == null) continue;
+
+        boolean moved = moveUnit(out, gameState, unit, bestMove[0], bestMove[1]);
+        if (moved) {
             gameState.unitHasMoved.put(id, true);
-            movedThisTurn = true;
-
-            // give the move animation time to fully finish before any attack
-            sleep(450);
+            sleep(350);
         }
     }
 }
 
-// Only check attack after movement has fully settled
-Unit targetAfterMove = findAdjacentEnemy(gameState, unit, "HUMAN");
-if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false)) {
-    doAttack(out, gameState, unit, targetAfterMove);
 
-    if (movedThisTurn) {
-        sleep(200);
-    } else {
-        sleep(120);
-    }
-}
-        }
-    }
 
     // ------------------------------------------------------------
     // SPELLS
@@ -240,16 +258,26 @@ if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false
             String summonKey = gameState.key(tile[0], tile[1]);
             if (gameState.boardUnits.containsKey(summonKey)) continue;
 
-            Unit unit = SummonUtils.spawnUnit(
-                    out,
-                    gameState,
-                    card.getUnitConfig(),
-                    tile[0],
-                    tile[1],
-                    card.getBigCard().getAttack(),
-                    card.getBigCard().getHealth(),
-                    "AI"
-            );
+        Tile summonTile = BasicObjectBuilders.loadTile(tile[0], tile[1]);
+        EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
+
+    if (summonFx != null) {
+    BasicCommands.playEffectAnimation(out, summonFx, summonTile);
+    sleep(250);
+}
+
+    Unit unit = SummonUtils.spawnUnit(
+        out,
+        gameState,
+        card.getUnitConfig(),
+        tile[0],
+        tile[1],
+        card.getBigCard().getAttack(),
+        card.getBigCard().getHealth(),
+        "AI"
+    );
+
+sleep(150);
 
             if (unit == null) continue;
 
@@ -389,6 +417,7 @@ if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false
     private static boolean moveUnit(ActorRef out, GameState gameState, Unit unit, int toX, int toY) {
         if (unit == null) return false;
         if (!isOnBoard(toX, toY)) return false;
+        if (!canMoveToTile(gameState, unit, toX, toY)) return false;
 
         int id = unit.getId();
         String newKey = gameState.key(toX, toY);
@@ -418,9 +447,10 @@ if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false
         boolean yFirst = decideMoveOrder(gameState, fromX, fromY, toX, toY);
 
         BasicCommands.moveUnitToTile(out, unit, dest, yFirst);
-        sleep(300);
+        sleep(550);
 
         unit.setPositionByTile(dest);
+        sleep(100);
 
         gameState.boardUnits.put(newKey, unit);
         gameState.unitPositionKey.put(id, newKey);
@@ -436,54 +466,48 @@ if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false
         return true;
     }
 
-    private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit unit) {
-        List<int[]> validTiles = new ArrayList<>();
-        Set<String> seen = new HashSet<>();
+private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit unit) {
+    List<int[]> validTiles = new ArrayList<>();
+    Set<String> seen = new HashSet<>();
 
-        int startX = unit.getPosition().getTilex();
-        int startY = unit.getPosition().getTiley();
+    int startX = unit.getPosition().getTilex();
+    int startY = unit.getPosition().getTiley();
 
-        int[][] cardinalDirs = {
-                {1, 0}, {-1, 0}, {0, 1}, {0, -1}
-        };
+    int[][] cardinalDirs = {
+            {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+    };
 
-        for (int[] dir : cardinalDirs) {
-            int dx = dir[0];
-            int dy = dir[1];
+    for (int[] dir : cardinalDirs) {
+        int x1 = startX + dir[0];
+        int y1 = startY + dir[1];
 
-            int step1X = startX + dx;
-            int step1Y = startY + dy;
-
-            if (!isOnBoard(step1X, step1Y)) continue;
-            if (occupied(gameState, step1X, step1Y)) continue;
-
-            addUniqueTile(validTiles, seen, step1X, step1Y, gameState);
-
-            int step2X = startX + 2 * dx;
-            int step2Y = startY + 2 * dy;
-
-            if (!isOnBoard(step2X, step2Y)) continue;
-            if (occupied(gameState, step2X, step2Y)) continue;
-
-            addUniqueTile(validTiles, seen, step2X, step2Y, gameState);
+        if (canMoveToTile(gameState, unit, x1, y1)) {
+            addUniqueTile(validTiles, seen, x1, y1, gameState);
         }
 
-        int[][] diagonalDirs = {
-                {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
-        };
+        int x2 = startX + 2 * dir[0];
+        int y2 = startY + 2 * dir[1];
 
-        for (int[] dir : diagonalDirs) {
-            int x = startX + dir[0];
-            int y = startY + dir[1];
+        if (canMoveToTile(gameState, unit, x2, y2)) {
+            addUniqueTile(validTiles, seen, x2, y2, gameState);
+        }
+    }
 
-            if (!isOnBoard(x, y)) continue;
-            if (occupied(gameState, x, y)) continue;
+    int[][] diagonalDirs = {
+            {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+    };
 
+    for (int[] dir : diagonalDirs) {
+        int x = startX + dir[0];
+        int y = startY + dir[1];
+
+        if (canMoveToTile(gameState, unit, x, y)) {
             addUniqueTile(validTiles, seen, x, y, gameState);
         }
-
-        return validTiles;
     }
+
+    return validTiles;
+}
 
     private static void addUniqueTile(List<int[]> tiles, Set<String> seen, int x, int y, GameState gameState) {
         String key = gameState.key(x, y);
@@ -729,6 +753,53 @@ if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false
         return false;
     }
 
+    private static boolean canMoveToTile(GameState gameState, Unit unit, int toX, int toY) {
+    if (unit == null) return false;
+    if (!isOnBoard(toX, toY)) return false;
+
+    int fromX = unit.getPosition().getTilex();
+    int fromY = unit.getPosition().getTiley();
+
+    if (fromX == toX && fromY == toY) return false;
+
+    int id = unit.getId();
+
+    // destination must be empty unless it is somehow the same unit's current tile
+    Unit destOccupant = gameState.boardUnits.get(gameState.key(toX, toY));
+    if (destOccupant != null && destOccupant.getId() != id) {
+        return false;
+    }
+
+    int dx = toX - fromX;
+    int dy = toY - fromY;
+
+    int absDx = Math.abs(dx);
+    int absDy = Math.abs(dy);
+
+    // Allowed shapes:
+    // 1 step diagonal
+    // 1 or 2 steps straight
+    boolean diagonalOne = (absDx == 1 && absDy == 1);
+    boolean straightOne = ((absDx == 1 && absDy == 0) || (absDx == 0 && absDy == 1));
+    boolean straightTwo = ((absDx == 2 && absDy == 0) || (absDx == 0 && absDy == 2));
+
+    if (!(diagonalOne || straightOne || straightTwo)) {
+        return false;
+    }
+
+    // one-step move: only destination matters
+    if (straightOne || diagonalOne) {
+        return true;
+    }
+
+    // two-step straight move: middle tile must also be clear
+    int midX = fromX + Integer.signum(dx);
+    int midY = fromY + Integer.signum(dy);
+
+    Unit middleOccupant = gameState.boardUnits.get(gameState.key(midX, midY));
+    return middleOccupant == null || middleOccupant.getId() == id;
+}
+
     private static int distanceToClosestEnemy(GameState gameState, int x, int y, String enemyOwner) {
         int best = Integer.MAX_VALUE;
 
@@ -748,17 +819,31 @@ if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false
         return best;
     }
 
-    private static boolean decideMoveOrder(GameState gameState, int x1, int y1, int x2, int y2) {
-        int dx = x2 - x1;
-        int dy = y2 - y1;
+private static boolean decideMoveOrder(GameState gameState, int x1, int y1, int x2, int y2) {
+    int dx = x2 - x1;
+    int dy = y2 - y1;
 
-        if (dx == 0 || dy == 0) {
-            return true;
-        }
-
-        boolean moveXFirstBlocked = gameState.boardUnits.containsKey(gameState.key(x2, y1));
-        return moveXFirstBlocked;
+    // straight move: order does not matter
+    if (dx == 0 || dy == 0) {
+        return true;
     }
+
+    // Option 1: move X first, then Y -> intermediate tile (x2, y1)
+    Unit xFirstBlocker = gameState.boardUnits.get(gameState.key(x2, y1));
+
+    // Option 2: move Y first, then X -> intermediate tile (x1, y2)
+    Unit yFirstBlocker = gameState.boardUnits.get(gameState.key(x1, y2));
+
+    boolean xFirstFree = (xFirstBlocker == null);
+    boolean yFirstFree = (yFirstBlocker == null);
+
+    // return true means Y-first in your code
+    if (yFirstFree && !xFirstFree) return true;
+    if (xFirstFree && !yFirstFree) return false;
+
+    // if both free, either is okay
+    return true;
+}
 
     private static boolean occupied(GameState gameState, int x, int y) {
         return gameState.boardUnits.containsKey(gameState.key(x, y));
