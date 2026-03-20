@@ -25,7 +25,7 @@ public final class SimpleAI {
     if (!"AI".equals(gameState.activePlayer)) return;
 
     try {
-        sleep(250);
+        sleep(100);
 
         // 1) cast useful spells while affordable, but never forever
         int spellActions = 0;
@@ -37,7 +37,7 @@ public final class SimpleAI {
             if (!playedSpell) break;
 
             spellActions++;
-            sleep(250);
+            sleep(100);
         }
 
         // 2) summon useful units while affordable, but never forever
@@ -50,12 +50,12 @@ public final class SimpleAI {
             if (!summonedUnit) break;
 
             summonActions++;
-            sleep(300);
+            sleep(120);
         }
 
         // 3) let units act
         playUnits(out, gameState);
-        sleep(250);
+        sleep(100);
 
     } catch (Exception e) {
         e.printStackTrace();
@@ -88,7 +88,7 @@ public final class SimpleAI {
             Unit adjacentEnemy = findAdjacentEnemy(gameState, unit, "HUMAN");
             if (adjacentEnemy != null) {
                 doAttack(out, gameState, unit, adjacentEnemy);
-                sleep(250);
+                sleep(150);
                 continue;
             }
 
@@ -97,23 +97,33 @@ public final class SimpleAI {
                 continue;
             }
 
-            if (!gameState.unitHasMoved.getOrDefault(id, false)) {
-                int[] bestMove = chooseBestMoveTile(gameState, unit);
-                if (bestMove != null) {
-                    boolean moved = moveUnit(out, gameState, unit, bestMove[0], bestMove[1]);
-                    if (moved) {
-                        gameState.unitHasMoved.put(id, true);
-                        sleep(350);
-                    }
-                }
-            }
+            boolean movedThisTurn = false;
 
-            // Try attack again after moving
-            Unit targetAfterMove = findAdjacentEnemy(gameState, unit, "HUMAN");
-            if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false)) {
-                doAttack(out, gameState, unit, targetAfterMove);
-                sleep(250);
-            }
+            if (!gameState.unitHasMoved.getOrDefault(id, false)) {
+            int[] bestMove = chooseBestMoveTile(gameState, unit);
+            if (bestMove != null) {
+            boolean moved = moveUnit(out, gameState, unit, bestMove[0], bestMove[1]);
+            if (moved) {
+            gameState.unitHasMoved.put(id, true);
+            movedThisTurn = true;
+
+            // give the move animation time to fully finish before any attack
+            sleep(450);
+        }
+    }
+}
+
+// Only check attack after movement has fully settled
+Unit targetAfterMove = findAdjacentEnemy(gameState, unit, "HUMAN");
+if (targetAfterMove != null && !gameState.unitHadAttacked.getOrDefault(id, false)) {
+    doAttack(out, gameState, unit, targetAfterMove);
+
+    if (movedThisTurn) {
+        sleep(200);
+    } else {
+        sleep(120);
+    }
+}
         }
     }
 
@@ -408,7 +418,7 @@ public final class SimpleAI {
         boolean yFirst = decideMoveOrder(gameState, fromX, fromY, toX, toY);
 
         BasicCommands.moveUnitToTile(out, unit, dest, yFirst);
-        sleep(450);
+        sleep(300);
 
         unit.setPositionByTile(dest);
 
