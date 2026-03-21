@@ -189,7 +189,7 @@ public static void killUnit(ActorRef out, GameState gameState, Unit unit) {
             if (out != null) BasicCommands.setUnitAttack(out, aliveUnit, curAtk + 1);
 
             int curHp = gameState.unitHealth.getOrDefault(aliveId, 0);
-            int maxHp = gameState.unitMaxHealth.getDeault(aliveId, curHp);
+            int maxHp = gameState.unitMaxHealth.getOrDefault(aliveId, curHp);
 
             int newHp = Math.min(curHp + 1, maxHp);
             gameState.unitHealth.put(aliveId,newHp);
