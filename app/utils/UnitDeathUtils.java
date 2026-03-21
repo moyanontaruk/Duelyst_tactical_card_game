@@ -34,57 +34,38 @@ public static void setUnitHealthAndCheckDeath(ActorRef out, GameState gameState,
         gameState.damageOnAvatarTrigger(out, unitId, damage);
     }
 
+
     // clamp to zero so UI never shows negative health
-    int clampedHealth = Math.max(0, newHealth);
+    // stop it from going over max health 20 too
+    int maxHealth = gameState.unitMaxHealth.getOrDefault(unitId, 20);
+    newHealth = Math.max(0, Math.min(newHealth, maxHealth));
+
 
     // 1) Update server-side health state
-    gameState.unitHealth.put(unitId, clampedHealth);
+    gameState.unitHealth.put(unitId, newHealth);
 
     // 2) Update UI health label on the unit
     if (out != null) {
-        BasicCommands.setUnitHealth(out, unit, clampedHealth);
+        BasicCommands.setUnitHealth(out, unit, newHealth);
     }
 
     // 3) If unit is avatar, also update player health UI
     if (unitId == gameState.humanAvatarId) {
-        gameState.humanHealth = clampedHealth;
+        gameState.humanHealth = newHealth;
         if (out != null) {
             BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
         }
-
-
-        //debug health going to neg
-        newHealth = Math.max(0, newHealth);
-        gameState.unitHealth.put(unitId, newHealth);
-
-        // 2) Update UI health label
-        if (out != null){
-            BasicCommands.setUnitHealth(out, unit, newHealth);
-        }
-
-        // --- story card 14 damage/healing ----
-        // 3) if unit is avatar, change health
-        if (unitId == gameState.humanAvatarId){
-            gameState.humanHealth = newHealth;
-            if (out != null) {
-                BasicCommands.setPlayer1Health(out, new Player(gameState.humanHealth, gameState.humanMana));
-            }
-        } else if (unitId == gameState.aiAvatarId){
+    } else if (unitId == gameState.aiAvatarId) {
             gameState.aiHealth = newHealth;
             if (out != null) {
                 BasicCommands.setPlayer2Health(out, new Player(gameState.aiHealth, gameState.aiMana));
             }
         }
 
-        // 4) If health <= 0, kill the unit
-        if (newHealth <= 0) {
-            killUnit(out, gameState, unit);
 
-        }
-    }
 
     // 4) If health <= 0, kill the unit
-    if (clampedHealth <= 0) {
+    if (newHealth <= 0) {
         killUnit(out, gameState, unit);
     }
 }
@@ -149,6 +130,8 @@ public static void killUnit(ActorRef out, GameState gameState, Unit unit) {
                 e -> e.getValue() != null && e.getValue().getId() == unitId
         );
     }
+
+    //HighlightUtils.clearHighlightedTiles(out, gameState);
 
     // for avatar deaths, show notification AFTER deletion
     if (isHumanAvatar) {
