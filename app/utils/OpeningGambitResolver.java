@@ -49,7 +49,13 @@ public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUn
     if (name.equals("nightsorrow assassin")) {
         Unit target = firstAdjacentEnemyBelowMax(gameState, summonedUnit, owner);
         if (target != null) {
-            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
+            if (isEnemyAvatar(gameState, owner, target.getId())) {
+                int damage = gameState.unitAttack.getOrDefault(summonedUnit.getId(), 0);
+                int targetHp = gameState.unitHealth.getOrDefault(target.getId(), 0);
+                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, targetHp - damage);
+            } else {
+                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
+            }
         }
         return;
     }
@@ -131,5 +137,11 @@ public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUn
 
     private static boolean isOnBoard(int x, int y) {
         return x >= 0 && x < 9 && y >= 0 && y < 5;
+    }
+
+    private static boolean isEnemyAvatar(GameState gameState, String srcOwner, int targetUnitId) {
+        if (gameState == null || srcOwner == null) return false;
+        int enemyAvatarId = "HUMAN".equals(srcOwner) ? gameState.aiAvatarId : gameState.humanAvatarId;
+        return targetUnitId == enemyAvatarId;
     }
 }
