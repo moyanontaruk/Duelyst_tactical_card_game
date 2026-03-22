@@ -17,7 +17,7 @@
 			"the battlefield, trigger the following effect):",
 			"Destroy an enemy unit in an adjacent square that",
 			"that is below its maximum heath.",
-			"该秒杀效果对敌方主将无效"
+			"Has no effect on the enemy commander"
 		],
 		"cardTextures": [
 			"assets/game/extra/cards/neutral_unit_h.png"
