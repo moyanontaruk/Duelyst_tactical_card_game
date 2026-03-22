@@ -28,6 +28,8 @@ public class GameState {
 	// ---- Turn ----
 	public int turnNumber = 1;
 	public String activePlayer = "HUMAN";
+	public boolean aiTurnPending = false;
+	public boolean aiTurnRunning = false;
 
 	// ---- Units on board ----
 	// key = "x,y"

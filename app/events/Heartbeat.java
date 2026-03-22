@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 
 import akka.actor.ActorRef;
 import structures.GameState;
+import utils.SimpleAI;
 
 /**
  * In the user’s browser, the game is running in an infinite loop, where there is around a 1 second delay 
@@ -22,7 +23,21 @@ public class Heartbeat implements EventProcessor{
 
 	@Override
 	public void processEvent(ActorRef out, GameState gameState, JsonNode message) {
-		
+		if (gameState == null || gameState.gameOver) return;
+		if (!gameState.aiTurnPending) return;
+		if (!"AI".equals(gameState.activePlayer)) {
+			gameState.aiTurnPending = false;
+			return;
+		}
+		if (gameState.aiTurnRunning) return;
+
+		gameState.aiTurnPending = false;
+		gameState.aiTurnRunning = true;
+		try {
+			SimpleAI.takeTurn(out, gameState);
+		} finally {
+			gameState.aiTurnRunning = false;
+		}
 	}
 
 }
