@@ -45,6 +45,11 @@ public final class SummonUtils {
 
         unit.setPositionByTile(tile);
 
+        // --- Fix: Ensure units can move and attack by default ---
+        unit.setCanMove(true);
+        unit.setCanAttack(true);
+        unit.setAttackAfterMove(true);
+
         // UI: draw + stats
         unit.setAttack(atk);
         unit.setHealth(hp);
