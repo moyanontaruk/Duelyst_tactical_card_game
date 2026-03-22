@@ -178,7 +178,7 @@ private static void moveUnitsTowardEnemies(ActorRef out, GameState gameState) {
                 return true;
             }
 
-            if (name.equals("true strike")) {
+            if (name.equals("Truestrike")) {
                 Unit target = chooseBestAiEnemyUnitTarget(gameState);
                 if (target == null) continue;
 
