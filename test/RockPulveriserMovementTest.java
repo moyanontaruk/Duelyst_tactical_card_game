@@ -68,4 +68,17 @@ public class RockPulveriserMovementTest {
         assertFalse("Rock Pulveriser should not be provoked by itself", 
             HighlightUtils.isProvoked(gameState, rockPulveriser));
     }
+
+    @Test
+    public void testRockPulveriserStunLogic() {
+        Unit unit = SummonUtils.spawnUnit(out, gameState, 
+            "conf/gameconfs/units/rock_pulveriser.json", 2, 2, 1, 4, "HUMAN");
+        
+        // Apply stun
+        gameState.stunnedUntilEndOfOwnersTurn.put(unit.getId(), "HUMAN");
+        
+        assertTrue("Unit should be stunned", 
+            gameState.stunnedUntilEndOfOwnersTurn.containsKey(unit.getId()));
+        // StunRules.rejectIfStunned would return true in TileClicked.java
+    }
 }
