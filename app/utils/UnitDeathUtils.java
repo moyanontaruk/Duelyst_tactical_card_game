@@ -211,17 +211,48 @@ public static void killUnit(ActorRef out, GameState gameState, Unit unit) {
                 int py = Integer.parseInt(parts[1]);
                 String owner = gameState.unitOwner.get(aliveId);
 
-                int[][] neighbors = {{1,0}, {-1,0}, {0,1}, {0,-1}};
-                for (int[] offset : neighbors) {
-                    int tx = px + offset[0];
-                    int ty = py + offset[1];
-                    if (tx >= 0 && tx < 9 && ty >= 0 && ty < 5) {
-                        if (!gameState.boardUnits.containsKey(gameState.key(tx, ty))) {
-                            utils.SummonUtils.spawnWraithling(out, gameState, tx, ty, owner);
-                            break;
+                // need to add in all 8 directions
+                // andd make sure it's not just the first open tile
+
+                //ALL valid empty adjacent tiles here
+                List<int[]> emptyAdjacent = new ArrayList<>();
+
+                for (int dx = -1; dx <= 1; dx++) {
+                    for (int dy = -1; dy <= 1; dy++) {
+
+                        // Skip (0,0) for priestess's own tile
+                        if (dx == 0 && dy == 0)
+                            continue;
+
+                        int tx = px + dx;
+                        int ty = py + dy;
+
+                        // ignore tiles that are off the board
+                        if (tx < 0 || tx >= 9 || ty < 0 || ty >= 5)
+                            continue;
+
+                        // build the board key for this candidate tile
+                        String targetKey = gameState.key(tx, ty);
+
+                        // only keep the tile if nothing is currently on it
+                        if (!gameState.boardUnits.containsKey(targetKey)) {
+                            emptyAdjacent.add(new int[]{tx, ty});
                         }
                     }
                 }
+
+                // If there are no empty adjacent tiles, the effect does nothing
+                if (emptyAdjacent.isEmpty()) {
+                    return;
+                }
+
+                // debugging issue --randomly choose one empty adjacent tile and not the just the first avail
+
+                int idx = (int) (Math.random() * emptyAdjacent.size());
+                int[] chosen = emptyAdjacent.get(idx);
+
+                // spawn on the randomly chosen tile
+                SummonUtils.spawnWraithling(out, gameState, chosen[0], chosen[1], owner);
             }
         }
     }
