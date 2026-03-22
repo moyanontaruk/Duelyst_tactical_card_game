@@ -3,8 +3,8 @@ package utils;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Collections;
 import java.util.Arrays;
+import java.util.Collections;
 
 import structures.basic.Card;
 
@@ -39,9 +39,6 @@ public class OrderedCardLoader {
 				}
 			}
 		}
-
-		//randomization
-		Collections.shuffle(cardsInDeck);
 		return cardsInDeck;
 	}
 	
@@ -66,9 +63,6 @@ public class OrderedCardLoader {
 				}
 			}
 		}
-
-		//randomization 
-		Collections.shuffle(cardsInDeck);
 		return cardsInDeck;
 	}
 	
