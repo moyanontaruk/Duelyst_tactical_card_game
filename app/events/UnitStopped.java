@@ -10,6 +10,8 @@ import structures.basic.Unit;
 import utils.BasicObjectBuilders;
 import utils.HighlightUtils;
 import utils.SummonUtils;
+import java.util.ArrayList;
+import java.util.List;
 
 public class UnitStopped implements EventProcessor {
 
@@ -58,32 +60,67 @@ public class UnitStopped implements EventProcessor {
 
         gameState.highlightedMovedTiles.clear();
     }
+
+    // fixing horn of forsaken for it to match the same local as it does in tileclicked.java
+    //before it was only cardinal direction, after fix will check all 8 tiles around the human avatar
+    // then randomly choice empty tile
     private void triggerHornOnHit(ActorRef out, GameState gameState, Unit attacker) {
-        if (attacker == null) return;
+        // Safety -- if there is no attacker, do nothing
+        if (attacker == null)
+            return;
 
-        // only human avatar with Horn equipped can trigger this
-        if (attacker.getId() != gameState.humanAvatarId) return;
-        if (!gameState.hornOfForsaken) return;
+        // Horn only triggers if the human is attacking
+        if (attacker.getId() != gameState.humanAvatarId)
+            return;
+        // If Horn is not currently equipped, do nothing
+        if (!gameState.hornOfForsaken)
+            return;
+        // extra safety --
+        // if robustness is already 0 or less, Horn should not trigger,, matches tileclicked version
 
+        if (gameState.hornRobustness <= 0)
+            return;
+
+        // get current board position of human avatar
         int[] avatarPos = gameState.getAvatarPosition("HUMAN");
         int px = avatarPos[0];
         int py = avatarPos[1];
 
-        int[][] neighbors = {
-                {1, 0}, {-1, 0}, {0, 1}, {0, -1}
-        };
+        // collect ALL empty adjacent tiles here
+        List<int[]> emptyAdjacent = new ArrayList<>();
 
-        for (int[] offset : neighbors) {
-            int tx = px + offset[0];
-            int ty = py + offset[1];
+        // loop through all 8 surrounding tiles, not just 4
+        // skip (0,0) because that is the avatar's own tile
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dy = -1; dy <= 1; dy++) {
+                if (dx == 0 && dy == 0)
+                    continue;
 
-            if (tx < 0 || tx >= 9 || ty < 0 || ty >= 5) continue;
+                int tx = px + dx;
+                int ty = py + dy;
+                // skip tiles that are off the board
+                if (tx < 0 || tx >= 9 || ty < 0 || ty >= 5)
+                    continue;
 
-            String key = gameState.key(tx, ty);
-            if (!gameState.boardUnits.containsKey(key)) {
-                SummonUtils.spawnWraithling(out, gameState, tx, ty, "HUMAN");
-                break;
+                String key = gameState.key(tx, ty);
+
+                // consider only tiles that are empty
+                if (!gameState.boardUnits.containsKey(key)) {
+                    emptyAdjacent.add(new int[]{tx, ty});
+                }
             }
         }
+
+        // if no empty adjacent tiles, horn cannot spawn anything
+        if (emptyAdjacent.isEmpty())
+            return;
+
+        // Randomly choose ONE empty adjacent tile, before it was just picking the first one
+
+        int idx = (int) (Math.random() * emptyAdjacent.size());
+        int[] chosen = emptyAdjacent.get(idx);
+
+        // Spawn the wraithling on the chosen tile
+        SummonUtils.spawnWraithling(out, gameState, chosen[0], chosen[1], "HUMAN");
     }
 }
