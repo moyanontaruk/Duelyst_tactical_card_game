@@ -11,7 +11,6 @@ import utils.HighlightUtils;
 import utils.StunRules;
 
 import java.util.Map;
-import utils.SimpleAI;
 
 public class EndTurnClicked implements EventProcessor {
 
