@@ -607,16 +607,9 @@ if (gameState.selectedCardIsUnit) {
         List<int[]> validTiles = new ArrayList<>();
         boolean isFlying = false;
 
-        if (unit instanceof BetterUnit) {
-            BetterUnit betterUnit = (BetterUnit) unit;
-            if (betterUnit.getKeywords() != null) {
-                for (String keyword : betterUnit.getKeywords()) {
-                    if (keyword != null && keyword.equalsIgnoreCase("flying")) {
-                        isFlying = true;
-                        break;
-                    }
-                }
-            }
+        String name = gameState.unitName.get(unit.getId());
+        if (name != null && name.toLowerCase().contains("flamewing")) {
+            isFlying = true;
         }
 
         if (isFlying) {
