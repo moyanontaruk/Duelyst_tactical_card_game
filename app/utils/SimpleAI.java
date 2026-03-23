@@ -101,6 +101,7 @@ private static void attackWithAdjacentUnits(ActorRef out, GameState gameState) {
 
         int id = unit.getId();
 
+        if (StunRules.isStunnedThisTurn(gameState, id)) continue;
         if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
 
         Unit target = findAdjacentEnemy(gameState, unit, "HUMAN");
@@ -122,7 +123,6 @@ private static void moveUnitsTowardEnemies(ActorRef out, GameState gameState) {
         int id = unit.getId();
 
         if (StunRules.isStunnedThisTurn(gameState, id)) continue;
-
         if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
         if (gameState.unitHasMoved.getOrDefault(id, false)) continue;
 
@@ -429,6 +429,7 @@ private static boolean moveUnit(ActorRef out, GameState gameState, Unit unit, in
     if (!canMoveToTile(gameState, unit, toX, toY)) return false;
 
     int id = unit.getId();
+    if (StunRules.isStunnedThisTurn(gameState, id)) return false;
 
     int fromX = unit.getPosition().getTilex();
     int fromY = unit.getPosition().getTiley();
