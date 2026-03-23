@@ -186,32 +186,34 @@ public class Initialize implements EventProcessor {
         if (p1 != null) {
             Arrays.sort(p1);
 
-            // build runtime deck in order
-            // build runtime deck in order, 2 copies of each card
-        for (String fileName : p1) {
-        String cfg = "conf/gameconfs/cards/" + fileName;
-        gameState.humanDeck.add(cfg);
-        }
-        for (String fileName : p1) {
-        String cfg = "conf/gameconfs/cards/" + fileName;
-        gameState.humanDeck.add(cfg);
-}
-           gameState.humanDeckIndex = 0;
+            // build runtime deck in order: ABCDEFGABCDEFG
+            for (String fileName : p1) {
+                String cfg = "conf/gameconfs/cards/" + fileName;
+                gameState.humanDeck.add(cfg);
+            }
+            for (String fileName : p1) {
+                String cfg = "conf/gameconfs/cards/" + fileName;
+                gameState.humanDeck.add(cfg);
+            }
+
+            gameState.humanDeckIndex = 0;
 
             // draw starting hand (up to 3 cards)
-           int startingDraw = Math.min(3, gameState.humanDeck.size());
-           for (int i = 0; i < startingDraw; i++) {
-           String cfg = gameState.humanDeck.get(gameState.humanDeckIndex);
-           gameState.humanDeckIndex = (gameState.humanDeckIndex + 1) % gameState.humanDeck.size();
-                gameState.humanHand.add(cfg);
+            int startingDraw = Math.min(3, gameState.humanDeck.size());
+            for (int i = 0; i < startingDraw; i++) {
+                if (gameState.humanDeckIndex < gameState.humanDeck.size()) {
+                    String cfg = gameState.humanDeck.get(gameState.humanDeckIndex);
+                    gameState.humanDeckIndex++;
+                    gameState.humanHand.add(cfg);
 
-                int handPos = i + 1;
-                int cardId = 1000 + handPos;
+                    int handPos = i + 1;
+                    int cardId = 1000 + handPos;
 
-                Card c = BasicObjectBuilders.loadCard(cfg, cardId, Card.class);
-                if (c != null) {
-                    BasicCommands.drawCard(out, c, handPos, 0);
-                    sleep(80);
+                    Card c = BasicObjectBuilders.loadCard(cfg, cardId, Card.class);
+                    if (c != null) {
+                        BasicCommands.drawCard(out, c, handPos, 0);
+                        sleep(80);
+                    }
                 }
             }
         }
@@ -222,28 +224,31 @@ public class Initialize implements EventProcessor {
         File dir2 = new File("conf/gameconfs/cards/");
         String[] p2 = dir2.list((d, name) -> name.startsWith("2_") && name.endsWith(".json"));
 
-    if (p2 != null) {
-    Arrays.sort(p2);
+        if (p2 != null) {
+            Arrays.sort(p2);
 
-    // build AI runtime deck: 2 copies of each AI card
-    for (String fileName : p2) {
-    String cfg = "conf/gameconfs/cards/" + fileName;
-    gameState.aiDeck.add(cfg);
-}
-    for (String fileName : p2) {
-    String cfg = "conf/gameconfs/cards/" + fileName;
-    gameState.aiDeck.add(cfg);
-}
-    gameState.aiDeckIndex = 0;
+            // build AI runtime deck in order: ABCDEFGABCDEFG
+            for (String fileName : p2) {
+                String cfg = "conf/gameconfs/cards/" + fileName;
+                gameState.aiDeck.add(cfg);
+            }
+            for (String fileName : p2) {
+                String cfg = "conf/gameconfs/cards/" + fileName;
+                gameState.aiDeck.add(cfg);
+            }
 
-    // draw starting AI hand (up to 3)
-    int startingDraw = Math.min(3, gameState.aiDeck.size());
-    for (int i = 0; i < startingDraw; i++) {
-    String cfg = gameState.aiDeck.get(gameState.aiDeckIndex);
-    gameState.aiDeckIndex = (gameState.aiDeckIndex + 1) % gameState.aiDeck.size();
-        gameState.aiHand.add(cfg);
-    }
-}
+            gameState.aiDeckIndex = 0;
+
+            // draw starting AI hand (up to 3)
+            int startingDraw = Math.min(3, gameState.aiDeck.size());
+            for (int i = 0; i < startingDraw; i++) {
+                if (gameState.aiDeckIndex < gameState.aiDeck.size()) {
+                    String cfg = gameState.aiDeck.get(gameState.aiDeckIndex);
+                    gameState.aiDeckIndex++;
+                    gameState.aiHand.add(cfg);
+                }
+            }
+        }
 
         
 
