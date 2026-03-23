@@ -43,6 +43,11 @@ public class UnitStopped implements EventProcessor {
         if (!adjacent) return;
 
         attacker.attack(gameState, out, defender);
+
+        if (attacker.getId() == gameState.humanAvatarId) {
+            sleep(600);   
+        }
+
         triggerHornOnHit(out, gameState, attacker);
     }
 
