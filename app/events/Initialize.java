@@ -188,9 +188,13 @@ public class Initialize implements EventProcessor {
 
             // build runtime deck in order
             // build runtime deck in order, 2 copies of each card
-           for (String fileName : p1) {
-           String cfg = "conf/gameconfs/cards/" + fileName;
-           gameState.humanDeck.add(cfg);
+        for (String fileName : p1) {
+        String cfg = "conf/gameconfs/cards/" + fileName;
+        gameState.humanDeck.add(cfg);
+        }
+        for (String fileName : p1) {
+        String cfg = "conf/gameconfs/cards/" + fileName;
+        gameState.humanDeck.add(cfg);
 }
            gameState.humanDeckIndex = 0;
 
@@ -222,6 +226,10 @@ public class Initialize implements EventProcessor {
     Arrays.sort(p2);
 
     // build AI runtime deck: 2 copies of each AI card
+    for (String fileName : p2) {
+    String cfg = "conf/gameconfs/cards/" + fileName;
+    gameState.aiDeck.add(cfg);
+}
     for (String fileName : p2) {
     String cfg = "conf/gameconfs/cards/" + fileName;
     gameState.aiDeck.add(cfg);

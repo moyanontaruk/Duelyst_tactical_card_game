@@ -346,8 +346,8 @@ sleep(150);
 
             int score = 0;
 
-            // prefer forward pressure toward human side
-            score += (8 - x) * 3;
+            // prefer forward pressure toward human side, but less aggressively
+            score += (8 - x) * 2;
 
             // prefer being near enemies
             int dist = distanceToClosestEnemy(gameState, x, y, "HUMAN");
@@ -360,9 +360,18 @@ sleep(150);
                 score += 6;
             }
 
+            // prefer centre rows a bit, so it does not always drift up/down
+            score -= Math.abs(y - 2);
+
             if (score > bestScore) {
                 bestScore = score;
                 best = pos;
+            } else if (score == bestScore && best != null) {
+                int bestCenterDist = Math.abs(best[1] - 2);
+                int newCenterDist = Math.abs(y - 2);
+                if (newCenterDist < bestCenterDist) {
+                    best = pos;
+                }
             }
         }
 
