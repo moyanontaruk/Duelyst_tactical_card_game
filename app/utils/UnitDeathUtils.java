@@ -166,21 +166,29 @@ public static void killUnit(ActorRef out, GameState gameState, Unit unit) {
             if (out != null) BasicCommands.setUnitAttack(out, aliveUnit, curAtk + 1);
         }
 
-        else if (name.equals("shadow watcher")) {
-            int curAtk = gameState.unitAttack.getOrDefault(aliveId, 0);
-            gameState.unitAttack.put(aliveId, curAtk + 1);
-            if (out != null) BasicCommands.setUnitAttack(out, aliveUnit, curAtk + 1);
+    else if (name.equals("shadow watcher")) {
 
-            int curHp = gameState.unitHealth.getOrDefault(aliveId, 0);
-            int maxHp = gameState.unitMaxHealth.getOrDefault(aliveId, curHp);
+    // --- Attack ---
+    int curAtk = gameState.unitAttack.getOrDefault(aliveId, 0);
+    int newAtk = curAtk + 1;
+    gameState.unitAttack.put(aliveId, newAtk);
 
-            int newHp = Math.min(curHp + 1, maxHp);
-            gameState.unitHealth.put(aliveId,newHp);
+    if (out != null) {
+        BasicCommands.setUnitAttack(out, aliveUnit, newAtk);
+    }
 
-            if (out != null) {
-                BasicCommands.setUnitHealth(out, aliveUnit, newHp);
-            }
-        }
+    // --- Health + Max Health ---
+    int curHp = gameState.unitHealth.getOrDefault(aliveId, 0);
+    int curMax = gameState.unitMaxHealth.getOrDefault(aliveId, curHp);
+
+    int newMax = curMax + 1;
+    int newHp = curHp + 1;
+
+    gameState.unitMaxHealth.put(aliveId, newMax);
+
+    // use your centralized method (important)
+    UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, aliveUnit, newHp);
+}
 
         else if (name.equals("shadowdancer")) {
             String owner = gameState.unitOwner.get(aliveId);
