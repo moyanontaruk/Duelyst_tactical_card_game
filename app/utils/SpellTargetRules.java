@@ -48,10 +48,9 @@ public final class SpellTargetRules {
             return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
-        // Sundrop Elixir -> any unit tile
+        // Sundrop Elixir -> allied non-avatar unit tile
         if (n.equals("sundrop elixir")) {
-            // --- only with AI ---
-            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
+            return tilesWithNonAvatarUnitsByOwner(gameState, "HUMAN");
         }
 
         // Horn of the Forsaken -> target avatar tile (human)
