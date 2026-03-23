@@ -95,6 +95,16 @@ public class EndTurnClicked implements EventProcessor {
     	gameState.aiMana = manaForThisTurn;
     	BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
 
+		if ("AI".equals(gameState.activePlayer)) {
+    	if (gameState.aiHand.size() < 6 && !gameState.aiDeck.isEmpty()) {
+        String drawn = gameState.aiDeck.remove(0);
+        gameState.aiHand.add(drawn);
+    }
+
+    	SimpleAI.takeTurn(out, gameState);
+    	return;
+}
+
     	// let AI play immediately
     	SimpleAI.takeTurn(out, gameState);
 		}
