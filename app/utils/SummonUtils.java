@@ -50,7 +50,7 @@ public final class SummonUtils {
         EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
         if (summonFx != null) {
         BasicCommands.playEffectAnimation(out, summonFx, tile);
-        sleep(550);
+        sleep(900);
 }
 
         // --- Fix: Ensure units can move and attack by default ---
@@ -62,7 +62,7 @@ public final class SummonUtils {
         unit.setAttack(atk);
         unit.setHealth(hp);
        BasicCommands.drawUnit(out, unit, tile);
-        sleep(180);
+        sleep(300);
         BasicCommands.setUnitAttack(out, unit, atk);
         sleep(80);
         UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, unit, hp);
