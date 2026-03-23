@@ -660,6 +660,9 @@ if (name.equals("wraithling swarm")) {
             int diagY = startY + direction[1];
 
             if (!isOnBoard(diagX, diagY)) continue;
+            boolean corner1Blocked = gameState.boardUnits.containsKey(gameState.key(diagX, startY));
+            boolean corner2Blocked = gameState.boardUnits.containsKey(gameState.key(startX, diagY));
+            if (corner1Blocked && corner2Blocked) continue;
 
             String key = gameState.key(diagX, diagY);
             if (gameState.boardUnits.containsKey(key)) continue;
