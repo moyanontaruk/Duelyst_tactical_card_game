@@ -52,6 +52,9 @@ public class GameState {
 	// attacker unit id -> defender unit id
 	public final Map<Integer, Integer> pendingAttackAfterMove = new HashMap<>();
 
+	public List<String> aiDeck = new ArrayList<>();
+	public List<String> aiHand = new ArrayList<>();
+
 
 	// ---- Unit id generator ----
 	public int nextUnitId = 1000;
