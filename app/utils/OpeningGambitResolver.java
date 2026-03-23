@@ -48,14 +48,8 @@ public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUn
 
     if (name.equals("nightsorrow assassin")) {
         Unit target = firstAdjacentEnemyBelowMax(gameState, summonedUnit, owner);
-        if (target != null) {
-            if (isEnemyAvatar(gameState, owner, target.getId())) {
-                int damage = gameState.unitAttack.getOrDefault(summonedUnit.getId(), 0);
-                int targetHp = gameState.unitHealth.getOrDefault(target.getId(), 0);
-                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, targetHp - damage);
-            } else {
-                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
-            }
+        if (target != null && !isEnemyAvatar(gameState, owner, target.getId())) {
+            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
         }
         return;
     }
