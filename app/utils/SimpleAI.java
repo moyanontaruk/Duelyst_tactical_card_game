@@ -208,7 +208,8 @@ private static boolean tryCastBestAffordableSpell(ActorRef out, GameState gameSt
                     out,
                     gameState,
                     target,
-                    5,
+                    //heal amount = 4
+                    4,
                     "AI",
                     false,
                     null
