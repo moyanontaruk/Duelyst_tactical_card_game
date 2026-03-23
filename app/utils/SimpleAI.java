@@ -503,15 +503,11 @@ sleep(100);
         // ------------------------------------------------------------
         boolean isFlying = false;
 
-        if (unit instanceof structures.basic.BetterUnit) {
-            structures.basic.BetterUnit betterUnit = (structures.basic.BetterUnit) unit;
-            if (betterUnit.getKeywords() != null) {
-                for (String keyword : betterUnit.getKeywords()) {
-                    if (keyword != null && keyword.equalsIgnoreCase("flying")) {
-                        isFlying = true;
-                        break;
-                    }
-                }
+        String name = gameState.unitName.get(unit.getId());
+        if (name != null) {
+            name = name.toLowerCase();
+            if (name.contains("flamewing")) {
+                isFlying = true;
             }
         }
 
