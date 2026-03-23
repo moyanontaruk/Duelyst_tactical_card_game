@@ -30,28 +30,28 @@ public final class SpellTargetRules {
         // - boardUnits contains ALL units (including avatars) as UI Units
         // - avatars are at fixed positions (1,2) and (7,2)
         int[] humanAvatarPos = gameState.getAvatarPosition("HUMAN");
-        int[] aiAvatarPos = gameState.getAvatarPosition("AI");
 
         int humanAx = humanAvatarPos[0], humanAy = humanAvatarPos[1];
-        int aiAx = aiAvatarPos[0], aiAy = aiAvatarPos[1];
 
 
 
         if (n.equals("truestrike")) {
-            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         if (n.equals("beam shock") || n.equals("beamshock")) {
-            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         if (n.equals("dark terminus")) {
-            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
+            //replacing with same generic method for this and sundrop elixir
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         // Sundrop Elixir -> any unit tile
         if (n.equals("sundrop elixir")) {
-            return tilesWithAnyUnit(gameState);
+            // --- only with AI ---
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         // Horn of the Forsaken -> target avatar tile (human)
@@ -99,19 +99,6 @@ public final class SpellTargetRules {
         return Collections.emptyList();
     }
 
-    private static List<int[]> tilesWithAnyUnit(GameState gameState) {
-        List<int[]> res = new ArrayList<>();
-        for (String k : gameState.boardUnits.keySet()) {
-            String[] parts = k.split(",");
-            if (parts.length != 2) continue;
-            try {
-                int x = Integer.parseInt(parts[0]);
-                int y = Integer.parseInt(parts[1]);
-                res.add(new int[]{x, y});
-            } catch (NumberFormatException ignored) {}
-        }
-        return res;
-    }
 
     private static boolean isTileEmpty(GameState gameState, int x, int y) {
         return !gameState.boardUnits.containsKey(gameState.key(x, y));
@@ -121,18 +108,10 @@ public final class SpellTargetRules {
         return x >= 0 && x < 9 && y >= 0 && y < 5;
     }
 
-    private static List<int[]> adjacentTiles(int x, int y) {
-        List<int[]> res = new ArrayList<>();
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dy = -1; dy <= 1; dy++) {
-                if (dx == 0 && dy == 0) continue;
-                res.add(new int[]{x + dx, y + dy});
-            }
-        }
-        return res;
-    }
 
-    private static List<int[]> tilesWithEnemyNonAvatarUnits(GameState gameState, String enemyOwner) {
+    //made into generic method to apply to sundrop elixir, truestrike, beam shock, dark terminus
+    private static List<int[]> 
+    tilesWithNonAvatarUnitsByOwner(GameState gameState, String owner) {
     List<int[]> res = new ArrayList<>();
 
     for (String k : gameState.boardUnits.keySet()) {
@@ -144,9 +123,9 @@ public final class SpellTargetRules {
         // exclude avatars
         if (id == gameState.humanAvatarId || id == gameState.aiAvatarId) continue;
 
-        // only enemy units
-        String owner = gameState.unitOwner.get(id);
-        if (owner == null || !owner.equals(enemyOwner)) continue;
+        // filter by owner
+        String unitOwner = gameState.unitOwner.get(id);
+        if (unitOwner == null || !owner.equals(unitOwner)) continue;
 
         String[] parts = k.split(",");
         if (parts.length != 2) continue;

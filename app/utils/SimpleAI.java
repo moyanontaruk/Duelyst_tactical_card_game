@@ -101,6 +101,7 @@ private static void attackWithAdjacentUnits(ActorRef out, GameState gameState) {
 
         int id = unit.getId();
 
+        if (StunRules.isStunnedThisTurn(gameState, id)) continue;
         if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
 
         Unit target = findAdjacentEnemy(gameState, unit, "HUMAN");
@@ -122,7 +123,6 @@ private static void moveUnitsTowardEnemies(ActorRef out, GameState gameState) {
         int id = unit.getId();
 
         if (StunRules.isStunnedThisTurn(gameState, id)) continue;
-
         if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
         if (gameState.unitHasMoved.getOrDefault(id, false)) continue;
 
@@ -208,7 +208,8 @@ private static boolean tryCastBestAffordableSpell(ActorRef out, GameState gameSt
                     out,
                     gameState,
                     target,
-                    5,
+                    //heal amount = 4
+                    4,
                     "AI",
                     false,
                     null
@@ -426,6 +427,7 @@ private static boolean moveUnit(ActorRef out, GameState gameState, Unit unit, in
     if (!canMoveToTile(gameState, unit, toX, toY)) return false;
 
     int id = unit.getId();
+    if (StunRules.isStunnedThisTurn(gameState, id)) return false;
 
     int fromX = unit.getPosition().getTilex();
     int fromY = unit.getPosition().getTiley();
@@ -443,17 +445,23 @@ private static boolean moveUnit(ActorRef out, GameState gameState, Unit unit, in
 
     // remove only from the old tile
     if (oldKey != null) {
-        Unit oldOccupant = gameState.boardUnits.get(oldKey);
-        if (oldOccupant != null && oldOccupant.getId() == id) {
-            gameState.boardUnits.remove(oldKey);
-        }
+    Unit oldOccupant = gameState.boardUnits.get(oldKey);
+    if (oldOccupant != null && oldOccupant.getId() == id) {
+        gameState.boardUnits.remove(oldKey);
     }
+}
 
     BasicCommands.moveUnitToTile(out, unit, dest, yFirst);
-    sleep(550);
 
-    unit.setPositionByTile(dest);
-    sleep(100);
+    int moveDistance = Math.abs(toX - fromX) + Math.abs(toY - fromY);
+    if (moveDistance >= 2) {
+    sleep(900);
+    } else {
+    sleep(700);
+}
+
+unit.setPositionByTile(dest);
+sleep(100);
 
     // re-check destination before committing in case state changed
     Unit checkAgain = gameState.boardUnits.get(newKey);
