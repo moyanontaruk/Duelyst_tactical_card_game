@@ -148,79 +148,87 @@ private static void moveUnitsTowardEnemies(ActorRef out, GameState gameState) {
     // SPELLS
     // ------------------------------------------------------------
 
-    private static boolean tryCastBestAffordableSpell(ActorRef out, GameState gameState) {
-        List<String> aiCards = getAiCardConfigs();
-        if (aiCards.isEmpty()) return false;
+private static boolean tryCastBestAffordableSpell(ActorRef out, GameState gameState) {
+    List<String> aiCards = new ArrayList<>(gameState.aiHand);
+    if (aiCards.isEmpty()) return false;
 
-        List<Card> affordableSpells = new ArrayList<>();
-        for (String cfg : aiCards) {
-            Card c = BasicObjectBuilders.loadCard(cfg, 9100, Card.class);
-            if (c == null) continue;
-            if (c.isCreature()) continue;
-            if (c.getManacost() > gameState.aiMana) continue;
-            affordableSpells.add(c);
-        }
+    List<String> affordableSpellCfgs = new ArrayList<>();
+    List<Card> affordableSpells = new ArrayList<>();
 
-        if (affordableSpells.isEmpty()) return false;
+    for (String cfg : aiCards) {
+        Card c = BasicObjectBuilders.loadCard(cfg, 9100, Card.class);
+        if (c == null) continue;
+        if (c.isCreature()) continue;
+        if (c.getManacost() > gameState.aiMana) continue;
 
-        for (Card card : affordableSpells) {
-            String name = normalize(card.getCardname());
-
-            if (name.equals("beam shock") || name.equals("beamshock")) {
-                Unit target = chooseBestAiBeamShockTarget(gameState);
-                if (target == null) continue;
-
-                boolean ok = StunRules.applyStunToUnit(out, gameState, target);
-                if (!ok) continue;
-
-                gameState.aiMana -= card.getManacost();
-                BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
-                return true;
-            }
-
-            if (name.equals("Truestrike")) {
-                Unit target = chooseBestAiEnemyUnitTarget(gameState);
-                if (target == null) continue;
-
-                int hp = gameState.unitHealth.getOrDefault(target.getId(), 0);
-                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, hp - 2);
-
-                gameState.aiMana -= card.getManacost();
-                BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
-                return true;
-            }
-
-            if (name.equals("sundrop elixir")) {
-                Unit target = chooseBestAiHealTarget(gameState);
-                if (target == null) continue;
-
-                boolean ok = HealSpellUtils.healUnit(
-                        out,
-                        gameState,
-                        target,
-                        5,
-                        "AI",
-                        false,
-                        null
-                );
-
-                if (!ok) continue;
-
-                gameState.aiMana -= card.getManacost();
-                BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
-                return true;
-            }
-        }
-
-        return false;
+        affordableSpellCfgs.add(cfg);
+        affordableSpells.add(c);
     }
+
+    if (affordableSpells.isEmpty()) return false;
+
+    for (int i = 0; i < affordableSpells.size(); i++) {
+        String cfg = affordableSpellCfgs.get(i);
+        Card card = affordableSpells.get(i);
+        String name = normalize(card.getCardname());
+
+        if (name.equals("beam shock") || name.equals("beamshock")) {
+            Unit target = chooseBestAiBeamShockTarget(gameState);
+            if (target == null) continue;
+
+            boolean ok = StunRules.applyStunToUnit(out, gameState, target);
+            if (!ok) continue;
+
+            gameState.aiMana -= card.getManacost();
+            BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+            gameState.aiHand.remove(cfg);
+            return true;
+        }
+
+        if (name.equals("truestrike") || name.equals("true strike")) {
+            Unit target = chooseBestAiEnemyUnitTarget(gameState);
+            if (target == null) continue;
+
+            int hp = gameState.unitHealth.getOrDefault(target.getId(), 0);
+            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, hp - 2);
+
+            gameState.aiMana -= card.getManacost();
+            BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+            gameState.aiHand.remove(cfg);
+            return true;
+        }
+
+        if (name.equals("sundrop elixir")) {
+            Unit target = chooseBestAiHealTarget(gameState);
+            if (target == null) continue;
+
+            boolean ok = HealSpellUtils.healUnit(
+                    out,
+                    gameState,
+                    target,
+                    5,
+                    "AI",
+                    false,
+                    null
+            );
+            if (!ok) continue;
+
+            gameState.aiMana -= card.getManacost();
+            BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
+            gameState.aiHand.remove(cfg);
+            return true;
+        }
+    }
+
+    return false;
+}
 
     // ------------------------------------------------------------
     // SUMMONING
     // ------------------------------------------------------------
 
     private static boolean trySummonBestAffordableUnit(ActorRef out, GameState gameState) {
-        List<String> aiCards = getAiCardConfigs();
+        List<String> aiCards = new ArrayList<>(gameState.aiHand);
         if (aiCards.isEmpty()) return false;
 
         List<String> affordableUnits = new ArrayList<>();
@@ -706,25 +714,6 @@ private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit 
         return res;
     }
 
-    // ------------------------------------------------------------
-    // CARD CONFIGS
-    // ------------------------------------------------------------
-
-    private static List<String> getAiCardConfigs() {
-        File dir = new File("conf/gameconfs/cards/");
-        String[] p2 = dir.list((d, name) -> name.startsWith("2_") && name.endsWith(".json"));
-
-        if (p2 == null) return new ArrayList<>();
-
-        Arrays.sort(p2);
-
-        List<String> res = new ArrayList<>();
-        for (String s : p2) {
-            res.add("conf/gameconfs/cards/" + s);
-        }
-
-        return res;
-    }
 
     // ------------------------------------------------------------
     // GEOMETRY / BOARD HELPERS
