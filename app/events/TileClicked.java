@@ -299,68 +299,60 @@ if (gameState.selectedCardIsUnit) {
             return;
         }
 
-        // Wraithling Swarm
-        // Wraithling Swarm
-        if (name.equals("wraithling swarm")) {
+        
+        
+    // Wraithling Swarm
+// Wraithling Swarm
+// Wraithling Swarm
+if (name.equals("wraithling swarm")) {
 
-            if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return;
-            if (!gameState.highlightedTargetTiles.contains(gameState.key(tilex, tiley))) return;
+    String clickedKey = gameState.key(tilex, tiley);
 
-            if (!spendHumanMana(out, gameState, cost)) return;
+    if (gameState.boardUnits.containsKey(clickedKey)) return;
+    if (!gameState.highlightedTargetTiles.contains(clickedKey)) return;
 
-            Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
-            EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
-            if (fx != null) BasicCommands.playEffectAnimation(out, fx, tile);
+    if (!spendHumanMana(out, gameState, cost)) return;
 
-            // First summon is the clicked tile
-            SummonUtils.spawnWraithling(out, gameState, tilex, tiley, "HUMAN");
+    // Copy the legal highlighted tiles BEFORE summoning anything
+    List<String> legalTiles = new ArrayList<>(gameState.highlightedTargetTiles);
 
-            int summoned = 1;
+    // Sort by distance from the clicked tile, so the sequence grows locally
+    legalTiles.sort((a, b) -> {
+        String[] pa = a.split(",");
+        String[] pb = b.split(",");
+        int ax = Integer.parseInt(pa[0]);
+        int ay = Integer.parseInt(pa[1]);
+        int bx = Integer.parseInt(pb[0]);
+        int by = Integer.parseInt(pb[1]);
 
-            // Then summon the remaining Wraithlings in sequence:
-            // each next one can appear on any empty tile adjacent to ANY friendly unit,
-            // including Wraithlings summoned earlier in this same spell.
-            while (summoned < 3) {
-                int[] next = null;
+        int da = Math.abs(ax - tilex) + Math.abs(ay - tiley);
+        int db = Math.abs(bx - tilex) + Math.abs(by - tiley);
 
-                outer:
-                for (Unit u : gameState.boardUnits.values()) {
-                    if (u == null) continue;
+        if (da != db) return Integer.compare(da, db);
 
-                    String owner = gameState.unitOwner.get(u.getId());
-                    if (!"HUMAN".equals(owner)) continue;
+        // stable tie-break
+        if (ax != bx) return Integer.compare(ax, bx);
+        return Integer.compare(ay, by);
+    });
 
-                    int ux = u.getPosition().getTilex();
-                    int uy = u.getPosition().getTiley();
+    int summoned = 0;
 
-                    for (int dx = -1; dx <= 1; dx++) {
-                        for (int dy = -1; dy <= 1; dy++) {
-                            if (dx == 0 && dy == 0) continue;
+    for (String key : legalTiles) {
+        if (summoned >= 3) break;
 
-                            int sx = ux + dx;
-                            int sy = uy + dy;
+        if (gameState.boardUnits.containsKey(key)) continue;
 
-                            if (!isOnBoard(sx, sy)) continue;
-                            if (gameState.boardUnits.containsKey(gameState.key(sx, sy))) continue;
+        String[] parts = key.split(",");
+        int sx = Integer.parseInt(parts[0]);
+        int sy = Integer.parseInt(parts[1]);
 
-                            next = new int[]{sx, sy};
-                            break outer;
-                        }
-                    }
-                }
+        SummonUtils.spawnWraithling(out, gameState, sx, sy, "HUMAN");
+        summoned++;
+    }
 
-                if (next == null) break; // no more legal summon spaces
-
-                Tile nextTile = BasicObjectBuilders.loadTile(next[0], next[1]);
-                if (fx != null) BasicCommands.playEffectAnimation(out, fx, nextTile);
-
-                SummonUtils.spawnWraithling(out, gameState, next[0], next[1], "HUMAN");
-                summoned++;
-            }
-
-            consumeSelectedCardAndClear(out, gameState, selectedPos);
-            return;
-        }
+    consumeSelectedCardAndClear(out, gameState, selectedPos);
+    return;
+}
 
         // Truestrike
         if (name.equals("truestrike")) {
