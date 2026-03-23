@@ -187,7 +187,7 @@ private static boolean tryCastBestAffordableSpell(ActorRef out, GameState gameSt
             return true;
         }
 
-        if (name.equals("truestrike") || name.equals("true strike")) {
+        if (name.equalsIgnoreCase("Truestrike") || name.equalsIgnoreCase("true strike")) {
             Unit target = chooseBestAiEnemyUnitTarget(gameState);
             if (target == null) continue;
 
