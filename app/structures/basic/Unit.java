@@ -182,24 +182,23 @@ public class Unit {
 		gameState.unitHadAttacked.put(attackerId, true);
 
 		// attack animation
-		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
+		int attackDelay = BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
 		try {
-			Thread.sleep(600);
+    	Thread.sleep(attackDelay);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+    	Thread.currentThread().interrupt();
+	}
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.idle);
 
 		// attacker deals damage
 		int defenderNewHp = defenderHp - attackerAtk;
 		//play hit animation on defender BEFORE checking death
-		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.hit);
-		try{
-			// give hit animation time to play 
-			Thread.sleep(400);
-		} catch (InterruptedException e){
-			e.printStackTrace();
-		}
+		int counterDelay = BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.hit);
+		try {
+    	Thread.sleep(counterDelay);
+		} catch (InterruptedException e) {
+    	Thread.currentThread().interrupt();
+}
 		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
 
 		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, enemy, defenderNewHp);
