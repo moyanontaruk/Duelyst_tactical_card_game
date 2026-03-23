@@ -607,6 +607,7 @@ if (gameState.selectedCardIsUnit) {
         List<int[]> validTiles = new ArrayList<>();
         boolean isFlying = false;
 
+        //  FIX: flying detection by unit name
         String name = gameState.unitName.get(unit.getId());
         if (name != null && name.toLowerCase().contains("flamewing")) {
             isFlying = true;
