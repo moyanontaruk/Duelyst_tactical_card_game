@@ -194,6 +194,11 @@ public class Initialize implements EventProcessor {
                 gameState.humanDeck.add(cfg);
             }
 
+            String squireCfg = "conf/gameconfs/cards/2_7_c_u_silverguard_squire.json";
+            if (gameState.humanDeck.remove(squireCfg) || new File(squireCfg).exists()) {
+                gameState.humanDeck.add(0, squireCfg);
+            }
+
             // draw starting hand (up to 3 cards)
             int startingDraw = Math.min(3, gameState.humanDeck.size());
             for (int i = 0; i < startingDraw; i++) {
