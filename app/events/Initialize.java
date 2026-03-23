@@ -197,6 +197,19 @@ public class Initialize implements EventProcessor {
             //randomizing from OrderedCardLoader;
             Collections.shuffle(gameState.humanDeck);
 
+            String squireCfg = "conf/gameconfs/cards/2_7_c_u_silverguard_squire.json";
+            String assassinCfg = "conf/gameconfs/cards/1_6_c_u_nightsorrow_assassin.json";
+
+            if (new File(squireCfg).exists()) {
+                gameState.humanDeck.remove(squireCfg);
+                gameState.humanDeck.add(0, squireCfg);
+            }
+
+            if (new File(assassinCfg).exists()) {
+                gameState.humanDeck.remove(assassinCfg);
+                gameState.humanDeck.add(1, assassinCfg);
+            }
+
             // draw starting hand (up to 3 cards)
             int startingDraw = Math.min(3, gameState.humanDeck.size());
             for (int i = 0; i < startingDraw; i++) {
