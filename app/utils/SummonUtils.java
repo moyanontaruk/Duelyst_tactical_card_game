@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import commands.BasicCommands;
 import structures.GameState;
 import structures.basic.BetterUnit;
+import structures.basic.EffectAnimation;
 import structures.basic.Tile;
 import structures.basic.Unit;
 
@@ -44,6 +45,13 @@ public final class SummonUtils {
         if (unit == null) return null;
 
         unit.setPositionByTile(tile);
+
+        // summon animation
+        EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
+        if (summonFx != null) {
+        BasicCommands.playEffectAnimation(out, summonFx, tile);
+        sleep(550);
+}
 
         // --- Fix: Ensure units can move and attack by default ---
         unit.setCanMove(true);

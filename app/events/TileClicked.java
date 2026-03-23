@@ -247,11 +247,7 @@ if (gameState.selectedCardIsUnit) {
     }
 
     Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
-    EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
-    if (summonFx != null) {
-        BasicCommands.playEffectAnimation(out, summonFx, tile);
-        sleep(120);
-    }
+
 
     if (!spendHumanMana(out, gameState, cost)) return;
 
