@@ -534,7 +534,7 @@ private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit 
         if (gameState.gameOver) return;
 
         int attackerId = attacker.getId();
-        if (StunRules.isStunnedThisTurn(gameState, attackerId)) continue;
+        if (StunRules.isStunnedThisTurn(gameState, attackerId)) return;
         if (gameState.unitHadAttacked.getOrDefault(attackerId, false)) return;
 
         if (!isAdjacent(attacker, target)) return;
