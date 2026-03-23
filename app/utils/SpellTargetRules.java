@@ -38,20 +38,22 @@ public final class SpellTargetRules {
 
 
         if (n.equals("truestrike")) {
-            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         if (n.equals("beam shock") || n.equals("beamshock")) {
-            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         if (n.equals("dark terminus")) {
-            return tilesWithEnemyNonAvatarUnits(gameState, "AI");
+            //replacing with same generic method for this and sundrop elixir
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         // Sundrop Elixir -> any unit tile
         if (n.equals("sundrop elixir")) {
-            return tilesWithAnyUnit(gameState);
+            // --- only with AI ---
+            return tilesWithNonAvatarUnitsByOwner(gameState, "AI");
         }
 
         // Horn of the Forsaken -> target avatar tile (human)
@@ -132,7 +134,9 @@ public final class SpellTargetRules {
         return res;
     }
 
-    private static List<int[]> tilesWithEnemyNonAvatarUnits(GameState gameState, String enemyOwner) {
+    //made into generic method to apply to sundrop elixir, truestrike, beam shock, dark terminus
+    private static List<int[]> 
+    tilesWithNonAvatarUnitsByOwner(GameState gameState, String owner) {
     List<int[]> res = new ArrayList<>();
 
     for (String k : gameState.boardUnits.keySet()) {
@@ -144,9 +148,9 @@ public final class SpellTargetRules {
         // exclude avatars
         if (id == gameState.humanAvatarId || id == gameState.aiAvatarId) continue;
 
-        // only enemy units
-        String owner = gameState.unitOwner.get(id);
-        if (owner == null || !owner.equals(enemyOwner)) continue;
+        // filter by owner
+        String unitOwner = gameState.unitOwner.get(id);
+        if (unitOwner == null || !owner.equals(unitOwner)) continue;
 
         String[] parts = k.split(",");
         if (parts.length != 2) continue;
