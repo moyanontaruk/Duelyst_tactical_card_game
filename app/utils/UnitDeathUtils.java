@@ -249,9 +249,9 @@ public static void killUnit(ActorRef out, GameState gameState, Unit unit) {
                     }
                 }
 
-                // If there are no empty adjacent tiles, the effect does nothing
+                //If there are no empty adjacent tiles, the effect does nothing
                 if (emptyAdjacent.isEmpty()) {
-                    return;
+                    continue;
                 }
 
                 // debugging issue --randomly choose one empty adjacent tile and not the just the first avail
