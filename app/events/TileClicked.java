@@ -304,6 +304,7 @@ if (gameState.selectedCardIsUnit) {
         }
 
         // Wraithling Swarm
+        // Wraithling Swarm
         if (name.equals("wraithling swarm")) {
 
             if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return;
@@ -315,24 +316,50 @@ if (gameState.selectedCardIsUnit) {
             EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
             if (fx != null) BasicCommands.playEffectAnimation(out, fx, tile);
 
+            // First summon is the clicked tile
             SummonUtils.spawnWraithling(out, gameState, tilex, tiley, "HUMAN");
 
             int summoned = 1;
-            int[] avatarPos = gameState.getAvatarPosition("HUMAN");
-            int ax = avatarPos[0], ay = avatarPos[1];
 
-            for (int dx = -1; dx <= 1 && summoned < 3; dx++) {
-                for (int dy = -1; dy <= 1 && summoned < 3; dy++) {
-                    if (dx == 0 && dy == 0) continue;
-                    int sx = ax + dx;
-                    int sy = ay + dy;
-                    if (!isOnBoard(sx, sy)) continue;
-                    if (gameState.boardUnits.containsKey(gameState.key(sx, sy))) continue;
-                    if (sx == tilex && sy == tiley) continue;
+            // Then summon the remaining Wraithlings in sequence:
+            // each next one can appear on any empty tile adjacent to ANY friendly unit,
+            // including Wraithlings summoned earlier in this same spell.
+            while (summoned < 3) {
+                int[] next = null;
 
-                    SummonUtils.spawnWraithling(out, gameState, sx, sy, "HUMAN");
-                    summoned++;
+                outer:
+                for (Unit u : gameState.boardUnits.values()) {
+                    if (u == null) continue;
+
+                    String owner = gameState.unitOwner.get(u.getId());
+                    if (!"HUMAN".equals(owner)) continue;
+
+                    int ux = u.getPosition().getTilex();
+                    int uy = u.getPosition().getTiley();
+
+                    for (int dx = -1; dx <= 1; dx++) {
+                        for (int dy = -1; dy <= 1; dy++) {
+                            if (dx == 0 && dy == 0) continue;
+
+                            int sx = ux + dx;
+                            int sy = uy + dy;
+
+                            if (!isOnBoard(sx, sy)) continue;
+                            if (gameState.boardUnits.containsKey(gameState.key(sx, sy))) continue;
+
+                            next = new int[]{sx, sy};
+                            break outer;
+                        }
+                    }
                 }
+
+                if (next == null) break; // no more legal summon spaces
+
+                Tile nextTile = BasicObjectBuilders.loadTile(next[0], next[1]);
+                if (fx != null) BasicCommands.playEffectAnimation(out, fx, nextTile);
+
+                SummonUtils.spawnWraithling(out, gameState, next[0], next[1], "HUMAN");
+                summoned++;
             }
 
             consumeSelectedCardAndClear(out, gameState, selectedPos);
