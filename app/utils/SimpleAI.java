@@ -491,48 +491,79 @@ sleep(100);
     return true;
 }
 
-private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit unit) {
-    List<int[]> validTiles = new ArrayList<>();
-    Set<String> seen = new HashSet<>();
+    private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit unit) {
+        List<int[]> validTiles = new ArrayList<>();
+        Set<String> seen = new HashSet<>();
 
-    int startX = unit.getPosition().getTilex();
-    int startY = unit.getPosition().getTiley();
+        int startX = unit.getPosition().getTilex();
+        int startY = unit.getPosition().getTiley();
 
-    int[][] cardinalDirs = {
-            {1, 0}, {-1, 0}, {0, 1}, {0, -1}
-    };
+        // ------------------------------------------------------------
+        // Flying: can move to any unoccupied tile on the board
+        // ------------------------------------------------------------
+        boolean isFlying = false;
 
-    for (int[] dir : cardinalDirs) {
-        int x1 = startX + dir[0];
-        int y1 = startY + dir[1];
-
-        if (canMoveToTile(gameState, unit, x1, y1)) {
-            addUniqueTile(validTiles, seen, x1, y1, gameState);
+        if (unit instanceof structures.basic.BetterUnit) {
+            structures.basic.BetterUnit betterUnit = (structures.basic.BetterUnit) unit;
+            if (betterUnit.getKeywords() != null) {
+                for (String keyword : betterUnit.getKeywords()) {
+                    if (keyword != null && keyword.equalsIgnoreCase("flying")) {
+                        isFlying = true;
+                        break;
+                    }
+                }
+            }
         }
 
-        int x2 = startX + 2 * dir[0];
-        int y2 = startY + 2 * dir[1];
-
-        if (canMoveToTile(gameState, unit, x2, y2)) {
-            addUniqueTile(validTiles, seen, x2, y2, gameState);
+        if (isFlying) {
+            for (int x = 0; x < 9; x++) {
+                for (int y = 0; y < 5; y++) {
+                    if (x == startX && y == startY) continue;
+                    if (occupied(gameState, x, y)) continue;
+                    addUniqueTile(validTiles, seen, x, y, gameState);
+                }
+            }
+            return validTiles;
         }
+
+        // ------------------------------------------------------------
+        // Normal movement: same as human
+        // ------------------------------------------------------------
+        int[][] cardinalDirs = {
+                {1, 0}, {-1, 0}, {0, 1}, {0, -1}
+        };
+
+        for (int[] dir : cardinalDirs) {
+            int x1 = startX + dir[0];
+            int y1 = startY + dir[1];
+
+            if (canMoveToTile(gameState, unit, x1, y1)) {
+                addUniqueTile(validTiles, seen, x1, y1, gameState);
+            }
+
+            int x2 = startX + 2 * dir[0];
+            int y2 = startY + 2 * dir[1];
+
+            if (canMoveToTile(gameState, unit, x2, y2)) {
+                addUniqueTile(validTiles, seen, x2, y2, gameState);
+            }
+        }
+
+        int[][] diagonalDirs = {
+                {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
+        };
+
+        for (int[] dir : diagonalDirs) {
+            int x = startX + dir[0];
+            int y = startY + dir[1];
+
+            if (canMoveToTile(gameState, unit, x, y)) {
+                addUniqueTile(validTiles, seen, x, y, gameState);
+            }
+        }
+
+        return validTiles;
     }
-
-    int[][] diagonalDirs = {
-            {1, 1}, {1, -1}, {-1, 1}, {-1, -1}
-    };
-
-    for (int[] dir : diagonalDirs) {
-        int x = startX + dir[0];
-        int y = startY + dir[1];
-
-        if (canMoveToTile(gameState, unit, x, y)) {
-            addUniqueTile(validTiles, seen, x, y, gameState);
-        }
-    }
-
-    return validTiles;
-}
 
     private static void addUniqueTile(List<int[]> tiles, Set<String> seen, int x, int y, GameState gameState) {
         String key = gameState.key(x, y);
