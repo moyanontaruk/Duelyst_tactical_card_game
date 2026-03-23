@@ -43,6 +43,11 @@ public class UnitStopped implements EventProcessor {
         if (!adjacent) return;
 
         attacker.attack(gameState, out, defender);
+
+        if (attacker.getId() == gameState.humanAvatarId) {
+            sleep(600);
+        }
+
         triggerHornOnHit(out, gameState, attacker);
     }
 
@@ -72,12 +77,13 @@ public class UnitStopped implements EventProcessor {
         // Horn only triggers if the human is attacking
         if (attacker.getId() != gameState.humanAvatarId)
             return;
+
         // If Horn is not currently equipped, do nothing
         if (!gameState.hornOfForsaken)
             return;
-        // extra safety --
-        // if robustness is already 0 or less, Horn should not trigger,, matches tileclicked version
 
+        // extra safety --
+        // if robustness is already 0 or less, Horn should not trigger, matches tileclicked version
         if (gameState.hornRobustness <= 0)
             return;
 
@@ -98,6 +104,7 @@ public class UnitStopped implements EventProcessor {
 
                 int tx = px + dx;
                 int ty = py + dy;
+
                 // skip tiles that are off the board
                 if (tx < 0 || tx >= 9 || ty < 0 || ty >= 5)
                     continue;
@@ -116,11 +123,18 @@ public class UnitStopped implements EventProcessor {
             return;
 
         // Randomly choose ONE empty adjacent tile, before it was just picking the first one
-
         int idx = (int) (Math.random() * emptyAdjacent.size());
         int[] chosen = emptyAdjacent.get(idx);
 
         // Spawn the wraithling on the chosen tile
         SummonUtils.spawnWraithling(out, gameState, chosen[0], chosen[1], "HUMAN");
+    }
+
+    // small UI sync delay
+    private void sleep(int ms) {
+        try {
+            Thread.sleep(ms);
+        } catch (InterruptedException ignored) {
+        }
     }
 }
