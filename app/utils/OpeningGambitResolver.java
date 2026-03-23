@@ -49,20 +49,29 @@ public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUn
     if (name.equals("nightsorrow assassin")) {
         Unit target = firstAdjacentEnemyBelowMax(gameState, summonedUnit, owner);
         if (target != null) {
-            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
+            if (isEnemyAvatar(gameState, owner, target.getId())) {
+                int damage = gameState.unitAttack.getOrDefault(summonedUnit.getId(), 0);
+                int targetHp = gameState.unitHealth.getOrDefault(target.getId(), 0);
+                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, targetHp - damage);
+            } else {
+                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
+            }
         }
         return;
     }
 
     if (name.equals("silverguard squire")) {
-        int x = summonedUnit.getPosition().getTilex();
-        int y = summonedUnit.getPosition().getTiley();
+        int[] avatarPos = gameState.getAvatarPosition(owner);
+        if (avatarPos == null) return;
 
-        int frontX = isHuman ? x + 1 : x - 1;
-        int backX  = isHuman ? x - 1 : x + 1;
+        int ax = avatarPos[0];
+        int ay = avatarPos[1];
 
-        buffIfAllied(out, gameState, frontX, y, owner);
-        buffIfAllied(out, gameState, backX, y, owner);
+        int frontX = isHuman ? ax + 1 : ax - 1;
+        int backX  = isHuman ? ax - 1 : ax + 1;
+
+        buffIfAllied(out, gameState, frontX, ay, owner);
+        buffIfAllied(out, gameState, backX, ay, owner);
     }
 }
 
@@ -131,5 +140,11 @@ public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUn
 
     private static boolean isOnBoard(int x, int y) {
         return x >= 0 && x < 9 && y >= 0 && y < 5;
+    }
+
+    private static boolean isEnemyAvatar(GameState gameState, String srcOwner, int targetUnitId) {
+        if (gameState == null || srcOwner == null) return false;
+        int enemyAvatarId = "HUMAN".equals(srcOwner) ? gameState.aiAvatarId : gameState.humanAvatarId;
+        return targetUnitId == enemyAvatarId;
     }
 }

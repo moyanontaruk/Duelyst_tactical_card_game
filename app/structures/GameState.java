@@ -28,6 +28,8 @@ public class GameState {
 	// ---- Turn ----
 	public int turnNumber = 1;
 	public String activePlayer = "HUMAN";
+	public boolean aiTurnPending = false;
+	public boolean aiTurnRunning = false;
 
 	// ---- Units on board ----
 	// key = "x,y"
@@ -49,6 +51,9 @@ public class GameState {
 	// pending "move first, then attack" action
 	// attacker unit id -> defender unit id
 	public final Map<Integer, Integer> pendingAttackAfterMove = new HashMap<>();
+
+	public List<String> aiDeck = new ArrayList<>();
+	public List<String> aiHand = new ArrayList<>();
 
 
 	// ---- Unit id generator ----

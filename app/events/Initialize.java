@@ -14,7 +14,7 @@ import utils.UnitDeathUtils;
 
 import java.io.File;
 import java.util.Arrays;
-import java.util.Collections;
+
 
 public class Initialize implements EventProcessor {
 
@@ -194,9 +194,6 @@ public class Initialize implements EventProcessor {
                 gameState.humanDeck.add(cfg);
             }
 
-            //randomizing from OrderedCardLoader;
-            Collections.shuffle(gameState.humanDeck);
-
             // draw starting hand (up to 3 cards)
             int startingDraw = Math.min(3, gameState.humanDeck.size());
             for (int i = 0; i < startingDraw; i++) {
@@ -213,6 +210,30 @@ public class Initialize implements EventProcessor {
                 }
             }
         }
+
+        gameState.aiDeck.clear();
+        gameState.aiHand.clear();
+
+        File dir2 = new File("conf/gameconfs/cards/");
+        String[] p2 = dir2.list((d, name) -> name.startsWith("2_") && name.endsWith(".json"));
+
+    if (p2 != null) {
+    Arrays.sort(p2);
+
+    // build AI runtime deck: 2 copies of each AI card
+    for (String fileName : p2) {
+        String cfg = "conf/gameconfs/cards/" + fileName;
+        gameState.aiDeck.add(cfg);
+        gameState.aiDeck.add(cfg);
+    }
+
+    // draw starting AI hand (up to 3)
+    int startingDraw = Math.min(3, gameState.aiDeck.size());
+    for (int i = 0; i < startingDraw; i++) {
+        String cfg = gameState.aiDeck.remove(0);
+        gameState.aiHand.add(cfg);
+    }
+}
 
         
 

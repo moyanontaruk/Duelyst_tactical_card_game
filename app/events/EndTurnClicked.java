@@ -11,7 +11,6 @@ import utils.HighlightUtils;
 import utils.StunRules;
 
 import java.util.Map;
-import utils.SimpleAI;
 
 public class EndTurnClicked implements EventProcessor {
 
@@ -20,10 +19,11 @@ public class EndTurnClicked implements EventProcessor {
 
 		if (gameState.gameOver) return;
 
-
 		HighlightUtils.clearSelectionAndHighlights(out, gameState);
 
 		String current = gameState.activePlayer; // "HUMAN" or "AI"
+		boolean isUserClick = (message != null);
+		if (isUserClick && !"HUMAN".equals(current)) return;
 
 		// Story #29: when a player's stunned turn ends, clear those stuns
 		StunRules.clearStunsForEndingPlayer(gameState, current);
@@ -94,9 +94,13 @@ public class EndTurnClicked implements EventProcessor {
 		} else {
     	gameState.aiMana = manaForThisTurn;
     	BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
-
-    	// let AI play immediately
-    	SimpleAI.takeTurn(out, gameState);
+			if (gameState.aiHand != null && gameState.aiDeck != null) {
+				if (gameState.aiHand.size() < 6 && !gameState.aiDeck.isEmpty()) {
+					String drawn = gameState.aiDeck.remove(0);
+					gameState.aiHand.add(drawn);
+				}
+			}
+			gameState.aiTurnPending = true;
 		}
 	}
 

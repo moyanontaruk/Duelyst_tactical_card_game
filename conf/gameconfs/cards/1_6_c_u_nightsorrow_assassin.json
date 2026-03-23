@@ -16,7 +16,8 @@
 			"Opening Gambit (whenever a unit is summoned onto",
 			"the battlefield, trigger the following effect):",
 			"Destroy an enemy unit in an adjacent square that",
-			"that is below its maximum heath."
+			"that is below its maximum heath.",
+			"Has no effect on the enemy commander"
 		],
 		"cardTextures": [
 			"assets/game/extra/cards/neutral_unit_h.png"
