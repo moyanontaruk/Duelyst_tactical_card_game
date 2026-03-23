@@ -293,9 +293,6 @@ sleep(150);
             gameState.aiMana -= card.getManacost();
             BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
 
-            // Newly summoned units should not move/attack this turn
-            gameState.unitHasMoved.put(unit.getId(), true);
-            gameState.unitHadAttacked.put(unit.getId(), true);
 
             OpeningGambitResolver.onSummoned(out, gameState, unit, card.getCardname());
             return true;
