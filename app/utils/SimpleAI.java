@@ -294,6 +294,8 @@ sleep(150);
             gameState.aiMana -= card.getManacost();
             BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
 
+            // remove the played unit card from AI hand
+            gameState.aiHand.remove(cfg);
 
             OpeningGambitResolver.onSummoned(out, gameState, unit, card.getCardname());
             return true;
