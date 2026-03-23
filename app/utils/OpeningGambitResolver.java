@@ -61,18 +61,16 @@ public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUn
     }
 
     if (name.equals("silverguard squire")) {
-        int[] avatarPos = gameState.getAvatarPosition(owner);
-        if (avatarPos == null) return;
+    int[] avatarPos = gameState.getAvatarPosition(owner);
+    int ax = avatarPos[0];
+    int ay = avatarPos[1];
 
-        int ax = avatarPos[0];
-        int ay = avatarPos[1];
+    int frontX = isHuman ? ax - 1 : ax + 1;
+    int backX  = isHuman ? ax + 1 : ax - 1;
 
-        int frontX = isHuman ? ax + 1 : ax - 1;
-        int backX  = isHuman ? ax - 1 : ax + 1;
-
-        buffIfAllied(out, gameState, frontX, ay, owner);
-        buffIfAllied(out, gameState, backX, ay, owner);
-    }
+    buffIfAllied(out, gameState, frontX, ay, owner);
+    buffIfAllied(out, gameState, backX, ay, owner);
+}
 }
 
     // ------------------------------------------------------------
