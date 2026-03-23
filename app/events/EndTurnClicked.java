@@ -95,7 +95,8 @@ public class EndTurnClicked implements EventProcessor {
     	BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
 			if (gameState.aiHand != null && gameState.aiDeck != null) {
 				if (gameState.aiHand.size() < 6 && !gameState.aiDeck.isEmpty()) {
-					String drawn = gameState.aiDeck.remove(0);
+    			String drawn = gameState.aiDeck.get(gameState.aiDeckIndex);
+    			gameState.aiDeckIndex = (gameState.aiDeckIndex + 1) % gameState.aiDeck.size();
 					gameState.aiHand.add(drawn);
 				}
 			}
@@ -104,9 +105,10 @@ public class EndTurnClicked implements EventProcessor {
 	}
 
 	private void drawTopHumanCardIntoHand(ActorRef out, GameState gameState) {
-		if (gameState.humanDeck.isEmpty()) return;
+	if (gameState.humanDeck.isEmpty()) return;
 
-		String cfg = gameState.humanDeck.remove(0);
+	String cfg = gameState.humanDeck.get(gameState.humanDeckIndex);
+	gameState.humanDeckIndex = (gameState.humanDeckIndex + 1) % gameState.humanDeck.size();
 
 		// hand full -> overdraw, card is discarded
 		if (gameState.humanHand.size() >= 6) {

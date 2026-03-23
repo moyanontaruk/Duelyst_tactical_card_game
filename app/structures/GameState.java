@@ -55,6 +55,8 @@ public class GameState {
 	public List<String> aiDeck = new ArrayList<>();
 	public List<String> aiHand = new ArrayList<>();
 
+	public int humanDeckIndex = 0;
+	public int aiDeckIndex = 0;
 
 	// ---- Unit id generator ----
 	public int nextUnitId = 1000;
