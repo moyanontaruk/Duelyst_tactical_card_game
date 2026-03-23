@@ -696,14 +696,18 @@ function renderPlayer1Card() {
 	
 }
 
+var endTurnButtonSprite = null;
+var endTurnLocked = false;
+var endTurnLockState = "idle";
+
 function renderEndTurnButton() {
-	var endTurnButton = g.sprite("assets/game/extra/ui/button_primary.png");
-    endTurnButton.setPosition(1600, 950);
-    endTurnButton.width = 300;
-    endTurnButton.height = 100;
-	endTurnButton.on('click', endturnClicked);
-	endTurnButton.interactive = true;
-	g.stage.addChild(endTurnButton);
+	endTurnButtonSprite = g.sprite("assets/game/extra/ui/button_primary.png");
+    endTurnButtonSprite.setPosition(1600, 950);
+    endTurnButtonSprite.width = 300;
+    endTurnButtonSprite.height = 100;
+	endTurnButtonSprite.on('click', endturnClicked);
+	endTurnButtonSprite.interactive = true;
+	g.stage.addChild(endTurnButtonSprite);
 	
 	var endTurnText = new PIXI.Text('End Turn', { font: '28px Roboto', fill: 'white', align: 'center' });
 	endTurnText.position.x = 1700;
@@ -713,6 +717,13 @@ function renderEndTurnButton() {
 }
 
 function endturnClicked(eventData) {
+	if (endTurnLocked) return;
+	endTurnLocked = true;
+	endTurnLockState = "pending_ai_start";
+	if (endTurnButtonSprite != null) {
+		endTurnButtonSprite.interactive = false;
+		endTurnButtonSprite.alpha = 0.6;
+	}
 	ws.send(JSON.stringify({
     		messagetype: "endturnclicked"
   	}));
@@ -839,6 +850,15 @@ function setPlayer1Mana(message) {
 		if (mana>=i) player1ManaIcons.get(i).show(1);
 		else player1ManaIcons.get(i).show(0);
 	}	
+
+	if (endTurnLocked && endTurnLockState === "ai_running" && mana > 0) {
+		endTurnLocked = false;
+		endTurnLockState = "idle";
+		if (endTurnButtonSprite != null) {
+			endTurnButtonSprite.interactive = true;
+			endTurnButtonSprite.alpha = 1;
+		}
+	}
 }
 
 function setPlayer2Mana(message) {
@@ -849,6 +869,10 @@ function setPlayer2Mana(message) {
 		if (mana>=i) player2ManaIcons.get(i).show(1);
 		else player2ManaIcons.get(i).show(0);
 	}	
+
+	if (endTurnLocked && endTurnLockState === "pending_ai_start" && mana > 0) {
+		endTurnLockState = "ai_running";
+	}
 }
 
 function addPlayer1Notification(message) {
