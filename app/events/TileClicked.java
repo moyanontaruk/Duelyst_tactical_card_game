@@ -90,7 +90,9 @@ public class TileClicked implements EventProcessor {
                         // already adjacent -> attack now
                         if (isAdjacent(ux, uy, ex, ey)) {
                             selectedUnit.attack(gameState, out, enemy);
-                            sleep(600);   // 给 avatar attack animation 留时间
+                            if (selectedUnit.getId() == gameState.humanAvatarId) {
+                                sleep(600);
+                            }
                             triggerHornOnHit(out, gameState, selectedUnit);
 
                             gameState.selectUnitId = null;
