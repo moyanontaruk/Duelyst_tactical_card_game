@@ -399,7 +399,7 @@ if (gameState.selectedCardIsUnit) {
                     out,
                     gameState,
                     target,
-                    5,
+                    4,
                     null,
                     true,
                     StaticConfFiles.f1_buff
