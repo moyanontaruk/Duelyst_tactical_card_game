@@ -121,6 +121,8 @@ private static void moveUnitsTowardEnemies(ActorRef out, GameState gameState) {
 
         int id = unit.getId();
 
+        if (StunRules.isStunnedThisTurn(gameState, id)) continue;
+
         if (gameState.unitHadAttacked.getOrDefault(id, false)) continue;
         if (gameState.unitHasMoved.getOrDefault(id, false)) continue;
 
@@ -532,6 +534,7 @@ private static List<int[]> getValidMoveTilesLikeHuman(GameState gameState, Unit 
         if (gameState.gameOver) return;
 
         int attackerId = attacker.getId();
+        if (StunRules.isStunnedThisTurn(gameState, attackerId)) continue;
         if (gameState.unitHadAttacked.getOrDefault(attackerId, false)) return;
 
         if (!isAdjacent(attacker, target)) return;
