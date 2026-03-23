@@ -14,9 +14,7 @@ public class DamageHealingTest {
   @Before
   public void setup(){
     BasicCommands.altTell = new CheckMessageIsNotNullOnTell();
-
     gameState = new GameState();
-
     gameState.humanAvatarId = 100;
     gameState.aiAvatarId = 200;
 
@@ -27,26 +25,22 @@ public class DamageHealingTest {
 
     gameState.unitHealth.put(100, 20);
     gameState.unitHealth.put(200, 20);
-
     gameState.humanHealth = 20;
     gameState.aiHealth = 20;
   }
 
-  // dealing damage to human avatar
   @Test 
   public void damageToHumanAvatar(){
     gameState.applyDamageToUnit(100, 7);
     assertEquals(13, gameState.humanHealth);
   }
 
-  // dealing damamge to ai avatar
   @Test 
   public void damageToAiAvatar(){
     gameState.applyDamageToUnit(200, 10);
     assertEquals(10, gameState.aiHealth);
   }
 
-  //dealing damage then healing human avatar
   @Test 
   public void damageThenHealingHumanAvatar(){
     gameState.applyDamageToUnit(100, 10);
@@ -54,7 +48,6 @@ public class DamageHealingTest {
     assertEquals(15, gameState.humanHealth);
   }
 
-  // damage to regular unit should not affect player health
   @Test 
   public void regularUnitDamageNoEffectOnPlayer(){
     int regularId = gameState.allocateUnitId();
