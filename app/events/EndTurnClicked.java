@@ -75,8 +75,7 @@ public class EndTurnClicked implements EventProcessor {
 
 		String next = gameState.activePlayer;
 
-		// reset zeal buff tracking for the new turn
-		gameState.zealBuffApplied.clear();
+
 
         // debug reset move/attack flags for the player whos new turn is starting - Maggie
 		resetActionsForPlayer(gameState, next);
