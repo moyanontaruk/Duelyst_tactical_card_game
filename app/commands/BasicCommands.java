@@ -419,5 +419,28 @@ public class BasicCommands {
 			e.printStackTrace();
 		}
 	}
+
+	/**
+	 * Plays a melee swing visual effect by reusing the drawProjectile message format.
+	 * The front-end treats isMeleeSwing=true as an arced path and may pool sprites.
+	 */
+	@SuppressWarnings({"deprecation"})
+	public static void playMeleeSwingEffect(ActorRef out, EffectAnimation effect, int mode, Tile startTile, Tile targetTile, int durationMs, int arcHeight) {
+		try {
+			ObjectNode returnMessage = Json.newObject();
+			returnMessage.put("messagetype", "drawProjectile");
+			returnMessage.put("effect", mapper.readTree(mapper.writeValueAsString(effect)));
+			returnMessage.put("tile", mapper.readTree(mapper.writeValueAsString(startTile)));
+			returnMessage.put("targetTile", mapper.readTree(mapper.writeValueAsString(targetTile)));
+			returnMessage.put("mode", mapper.readTree(mapper.writeValueAsString(mode)));
+			returnMessage.put("isMeleeSwing", true);
+			returnMessage.put("durationMs", durationMs);
+			returnMessage.put("arcHeight", arcHeight);
+			if (altTell!=null) altTell.tell(returnMessage);
+			else out.tell(returnMessage, out);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 	
 }

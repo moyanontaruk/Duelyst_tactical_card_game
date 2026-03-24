@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import commands.BasicCommands;
 import structures.GameState;
 import akka.actor.ActorRef;
+import utils.BasicObjectBuilders;
+import utils.StaticConfFiles;
 import utils.UnitDeathUtils;
 
 /**
@@ -34,6 +36,8 @@ public class Unit {
 	boolean canMove;
 	boolean canAttack;
 	boolean attackAfterMove;
+
+	private static EffectAnimation cachedMeleeSwingEffect;
 	
 	public Unit() {}
 	
@@ -156,7 +160,6 @@ public class Unit {
 		this.attackAfterMove = attackAfterMove;
 	}
 
-	// correction to attack () needed -- adding UnitDeathUtils - Maggie
 	public void attack(GameState gameState, ActorRef out, Unit enemy) {
 
 		if (gameState == null || enemy == null) return;
@@ -183,8 +186,17 @@ public class Unit {
 
 		// attack animation
 		int attackDelay = BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
+		BasicCommands.playMeleeSwingEffect(
+				out,
+				getMeleeSwingEffect(),
+				0,
+				BasicObjectBuilders.loadTile(this.position.getTilex(), this.position.getTiley()),
+				BasicObjectBuilders.loadTile(enemy.position.getTilex(), enemy.position.getTiley()),
+				attackDelay,
+				60
+		);
 		try {
-    	Thread.sleep(attackDelay);
+    	if (out != null) Thread.sleep(attackDelay);
 		} catch (InterruptedException e) {
     	Thread.currentThread().interrupt();
 	}
@@ -195,7 +207,7 @@ public class Unit {
 		//play hit animation on defender BEFORE checking death
 		int counterDelay = BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.hit);
 		try {
-    	Thread.sleep(counterDelay);
+    	if (out != null) Thread.sleep(counterDelay);
 		} catch (InterruptedException e) {
     	Thread.currentThread().interrupt();
 }
@@ -209,11 +221,20 @@ public class Unit {
 		}
 
 		// counter attack
-		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.attack);
+		int counterAttackDelay = BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.attack);
+		BasicCommands.playMeleeSwingEffect(
+				out,
+				getMeleeSwingEffect(),
+				0,
+				BasicObjectBuilders.loadTile(enemy.position.getTilex(), enemy.position.getTiley()),
+				BasicObjectBuilders.loadTile(this.position.getTilex(), this.position.getTiley()),
+				counterAttackDelay,
+				60
+		);
 		try {
-			Thread.sleep(600);
+			if (out != null) Thread.sleep(counterAttackDelay);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
 		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
 
@@ -223,12 +244,19 @@ public class Unit {
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.hit);
 		try {
 			//give animation time to play
-			Thread.sleep(400);
+			if (out != null) Thread.sleep(400);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.idle);
 
 		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, this, attackerNewHp);
+	}
+
+	private static EffectAnimation getMeleeSwingEffect() {
+		if (cachedMeleeSwingEffect == null) {
+			cachedMeleeSwingEffect = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_projectiles);
+		}
+		return cachedMeleeSwingEffect;
 	}
 }

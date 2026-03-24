@@ -482,7 +482,23 @@ function executeMoveStep(message) {
 
 function drawProjectile(message) {
 	
-	var projectile = g.sprite(message.effect.animationTextures);
+	if (typeof meleeSwingPool === "undefined") {
+		// Pool of reusable melee-swing sprites to avoid allocations during frequent attacks.
+		meleeSwingPool = [];
+	}
+	if (typeof MAX_MELEE_SWING_POOL === "undefined") {
+		MAX_MELEE_SWING_POOL = 64;
+	}
+
+	var isMeleeSwing = (message.isMeleeSwing === true);
+
+	var projectile = null;
+	if (isMeleeSwing && meleeSwingPool.length > 0) {
+		projectile = meleeSwingPool.pop();
+	} else {
+		projectile = g.sprite(message.effect.animationTextures);
+	}
+
 	var effectX = message.tile.xpos - message.effect.correction.spriteTopLeftX;
 	var effectY = message.tile.ypos - message.effect.correction.spriteTopLeftY;
 	projectile.setPosition(effectX+message.effect.correction.offsetX, effectY+message.effect.correction.offsetY);
@@ -499,6 +515,18 @@ function drawProjectile(message) {
 	projectile.tile = message.tile;
 	projectile.targetTile = message.targetTile;
 	projectile.effect = message.effect;
+
+	projectile.isMeleeSwing = isMeleeSwing;
+	projectile.durationMs = message.durationMs;
+	projectile.arcFrame = 0;
+	projectile.arcFramesTotal = null;
+	projectile.arcHeight = message.arcHeight;
+	projectile.startX = projectile.position.x;
+	projectile.startY = projectile.position.y;
+	projectile.targetX = null;
+	projectile.targetY = null;
+	projectile.arcNormalX = 0;
+	projectile.arcNormalY = 0;
 	
 	g.stage.addChild(projectile);
 	
@@ -518,6 +546,52 @@ function executeProjectileMoveStep(projectile) {
 	
 	var spriteX = targetTile.xpos - effect.correction.spriteTopLeftX+effect.correction.offsetX;
 	var spriteY = targetTile.ypos - effect.correction.spriteTopLeftY+effect.correction.offsetY;
+
+	if (projectile.isMeleeSwing === true) {
+		// Melee swings follow an arced path between attacker and defender and are returned to a small pool on completion.
+		if (projectile.arcFramesTotal == null) {
+			var durationMs = projectile.durationMs || 600;
+			projectile.arcFramesTotal = Math.max(1, Math.round((durationMs / 1000) * 60));
+			projectile.targetX = spriteX;
+			projectile.targetY = spriteY;
+
+			var dx0 = projectile.targetX - projectile.startX;
+			var dy0 = projectile.targetY - projectile.startY;
+			var len0 = Math.sqrt(dx0*dx0 + dy0*dy0);
+			if (len0 > 0) {
+				projectile.arcNormalX = -dy0 / len0;
+				projectile.arcNormalY = dx0 / len0;
+			}
+		}
+
+		projectile.arcFrame = projectile.arcFrame + 1;
+		var t0 = projectile.arcFrame / projectile.arcFramesTotal;
+		if (t0 > 1) t0 = 1;
+
+		var baseX0 = projectile.startX + (projectile.targetX - projectile.startX) * t0;
+		var baseY0 = projectile.startY + (projectile.targetY - projectile.startY) * t0;
+
+		var arc0 = 0;
+		if (projectile.arcHeight) {
+			arc0 = Math.sin(Math.PI * t0) * projectile.arcHeight;
+		}
+
+		projectile.position.x = baseX0 + projectile.arcNormalX * arc0;
+		projectile.position.y = baseY0 + projectile.arcNormalY * arc0;
+
+		if (projectile.arcFrame >= projectile.arcFramesTotal) {
+			projectile.position.x = projectile.targetX;
+			projectile.position.y = projectile.targetY;
+			g.stage.removeChild(projectile);
+			if (meleeSwingPool.length < MAX_MELEE_SWING_POOL) {
+				projectile.visible = false;
+				meleeSwingPool.push(projectile);
+			}
+			return true;
+		}
+
+		return false;
+	}
 	
 	var dx = Math.abs(projectile.position.x - spriteX);
     var dy = Math.abs(projectile.position.y - spriteY);
