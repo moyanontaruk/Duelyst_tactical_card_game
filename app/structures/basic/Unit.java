@@ -37,7 +37,6 @@ public class Unit {
 	boolean canAttack;
 	boolean attackAfterMove;
 
-	private static EffectAnimation cachedMeleeSwingEffect;
 	
 	public Unit() {}
 	
@@ -186,15 +185,7 @@ public class Unit {
 
 		// attack animation
 		int attackDelay = BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
-		BasicCommands.playMeleeSwingEffect(
-				out,
-				getMeleeSwingEffect(),
-				0,
-				BasicObjectBuilders.loadTile(this.position.getTilex(), this.position.getTiley()),
-				BasicObjectBuilders.loadTile(enemy.position.getTilex(), enemy.position.getTiley()),
-				attackDelay,
-				60
-		);
+		
 		try {
     	if (out != null) Thread.sleep(attackDelay);
 		} catch (InterruptedException e) {
@@ -222,15 +213,7 @@ public class Unit {
 
 		// counter attack
 		int counterAttackDelay = BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.attack);
-		BasicCommands.playMeleeSwingEffect(
-				out,
-				getMeleeSwingEffect(),
-				0,
-				BasicObjectBuilders.loadTile(enemy.position.getTilex(), enemy.position.getTiley()),
-				BasicObjectBuilders.loadTile(this.position.getTilex(), this.position.getTiley()),
-				counterAttackDelay,
-				60
-		);
+		
 		try {
 			if (out != null) Thread.sleep(counterAttackDelay);
 		} catch (InterruptedException e) {
@@ -253,10 +236,5 @@ public class Unit {
 		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, this, attackerNewHp);
 	}
 
-	private static EffectAnimation getMeleeSwingEffect() {
-		if (cachedMeleeSwingEffect == null) {
-			cachedMeleeSwingEffect = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_projectiles);
-		}
-		return cachedMeleeSwingEffect;
-	}
+	
 }
