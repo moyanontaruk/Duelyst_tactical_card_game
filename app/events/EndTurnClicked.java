@@ -67,8 +67,11 @@ public class EndTurnClicked implements EventProcessor {
 		// ----------------------------------------------------
 		if ("HUMAN".equals(current)) {
 			gameState.activePlayer = "AI";
+			BasicCommands.addPlayer1Notification(out, "AI Turn", 2);
 		} else {
 			gameState.activePlayer = "HUMAN";
+			BasicCommands.addPlayer1Notification(out, "Your Turn", 2);
+
 			// count full rounds: only increase when AI finishes and goes back to HUMAN
 			gameState.turnNumber += 1;
 		}
