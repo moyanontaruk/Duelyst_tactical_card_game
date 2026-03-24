@@ -12,6 +12,10 @@ import java.util.List;
 
 /**
  * Story #31: highlight valid spell target tiles in red when a spell card is selected.
+ *  Mainly used when:
+ * - selecting cards
+ * - showing valid targets (spells, moves, attacks)
+ * - clearing UI state after actions
  */
 public final class HighlightUtils {
 
@@ -93,7 +97,7 @@ public final class HighlightUtils {
     }
 
 
-    /** Convenience: clear both selection + target highlights. */
+    /** Convenience: clear both selection + target highlights */
     public static void clearSelectionAndHighlights(ActorRef out, GameState gameState) {
         if (gameState == null) return;
 
@@ -169,6 +173,11 @@ public final class HighlightUtils {
         }
         return surroundingTiles;
     }
+
+    /**
+     * Returns adjacent enemy units that have "provoke".
+     * Used to restrict movement/attacks when provoked.
+     */
     public static List<Unit> getAdjacentEnemyProvokers(GameState gameState, Unit unit) {
         List<Unit> result = new ArrayList<>();
         if (gameState == null || unit == null) return result;
@@ -203,6 +212,7 @@ public final class HighlightUtils {
         return result;
     }
 
+    //Returns true if the unit is currently affected by provoke
     public static boolean isProvoked(GameState gameState, Unit unit) {
         return !getAdjacentEnemyProvokers(gameState, unit).isEmpty();
     }
