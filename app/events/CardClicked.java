@@ -30,6 +30,7 @@ public class CardClicked implements EventProcessor {
         if (gameState.gameOver) return;
         if (!"HUMAN".equals(gameState.activePlayer)) return;
 
+        // Hand positions are shown as 1..6 in the UI
         int handPosition = message.get("position").asInt(); // 1..6
         if (handPosition < 1 || handPosition > 6) return;
 
@@ -50,17 +51,17 @@ public class CardClicked implements EventProcessor {
         Card card = BasicObjectBuilders.loadCard(cardConfig, 1000 + handPosition, Card.class);
         if (card == null) return;
 
-        // mana check
+        // mana check; Stop here if the player cannot afford the card
         if (gameState.humanMana < card.getManacost()) {
             BasicCommands.addPlayer1Notification(out, "Not enough mana", 2);
             return;
         }
 
-        // clear previous selection & highlights
+        // Clear anything that was selected or highlighted before choosing this card
         HighlightUtils.clearSelectionAndHighlights(out, gameState);
 
 
-        // store selection state
+        // Store the new selection so later click handlers know what the player chose
         gameState.selectedHandPos = handPosition;
         gameState.selectedCardConfig = cardConfig;
         gameState.selectedCardIsUnit = card.isCreature();
@@ -99,6 +100,8 @@ private List<int[]> getHumanSummonTiles(GameState gameState) {
     List<int[]> result = new ArrayList<>();
     java.util.Set<String> seen = new java.util.HashSet<>();
 
+    // A unit can be summoned onto any empty adjacent tile around a human-owned unit.
+    // The seen set prevents duplicate tiles when multiple friendly units share neighbours
     for (Unit unit : gameState.boardUnits.values()) {
         if (unit == null) continue;
 

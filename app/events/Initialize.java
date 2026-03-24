@@ -75,6 +75,8 @@ public class Initialize implements EventProcessor {
 
 
         // for Story #17/#30
+        // Extra clears kept here because other story logic relies on these maps
+        // being empty before avatars and units are registered again
         if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.clear();
         if (gameState.unitOwner != null) gameState.unitOwner.clear();
 
@@ -83,7 +85,7 @@ public class Initialize implements EventProcessor {
         gameState.selectedCardIsUnit = false;
 
         // ----------------------------------------------------
-        // 1) Draw board tiles (9x5)
+        // 1) Draw board tiles 
         // ----------------------------------------------------
       for (int x = 0; x < 9; x++) {
         for (int y = 0; y < 5; y++) {
@@ -104,6 +106,8 @@ public class Initialize implements EventProcessor {
 
         // --- story card 14 healing/damage -----
         // link avatar Id so health can change
+        // Fixed avatar ids are useful because other parts of the game
+        // refer back to them when applying damage, healing, and win/loss checks
         gameState.humanAvatarId = 100;
         gameState.aiAvatarId = 200;
 
@@ -126,12 +130,14 @@ public class Initialize implements EventProcessor {
         sleep(80);
 
         // ---- track on board ----
+        // Put both avatars onto the board maps and id lookup maps
         gameState.boardUnits.put(gameState.key(hx, hy), humanAvatar);
         gameState.boardUnits.put(gameState.key(ax, ay), aiAvatar);
         gameState.uiUnitById.put(100, humanAvatar);
         gameState.uiUnitById.put(200, aiAvatar);
 
         // ---- track stats/positions server-side ----
+        // Store combat stats and board positions on the server side
         gameState.unitAttack.put(100, 2);
         gameState.unitAttack.put(200, 2);
         gameState.unitPositionKey.put(100, gameState.key(hx, hy));
