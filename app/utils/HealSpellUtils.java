@@ -28,16 +28,19 @@ public final class HealSpellUtils {
                                    boolean allowAvatarTargets,
                                    String effectConfig) {
 
+        // Basic safety checks
         if (gameState == null || target == null) return false;
 
         int targetId = target.getId();
 
+        // Prevent healing avatars if the spell does not allow it
         if (!allowAvatarTargets &&
                 (targetId == gameState.humanAvatarId || targetId == gameState.aiAvatarId)) {
             BasicCommands.addPlayer1Notification(out, "Invalid target.", 2);
             return false;
         }
 
+        // If the spell is restricted to a specific owner, enforce that here
         if (requiredOwner != null) {
             String owner = gameState.unitOwner.get(targetId);
             if (!requiredOwner.equals(owner)) {
@@ -46,10 +49,14 @@ public final class HealSpellUtils {
             }
         }
 
+        // Get current and max health values
         int currentHealth = gameState.unitHealth.getOrDefault(targetId, 0);
         int maxHealth = gameState.unitMaxHealth.getOrDefault(targetId, currentHealth);
+
+        // Apply healing but cap it at max health
         int newHealth = Math.min(currentHealth + healAmount, maxHealth);
 
+        // Resolve the tile for visual effect placement
         Tile targetTile = BasicObjectBuilders.loadTile(
                 target.getPosition().getTilex(),
                 target.getPosition().getTiley()
@@ -62,6 +69,7 @@ public final class HealSpellUtils {
             }
         }
 
+        // Apply the new health using the central health/death handler
         UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, newHealth);
         return true;
     }
