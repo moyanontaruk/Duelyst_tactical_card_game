@@ -50,7 +50,7 @@ public final class SummonUtils {
         EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
         if (summonFx != null) {
         BasicCommands.playEffectAnimation(out, summonFx, tile);
-        sleep(900);
+        sleep(550);
 }
 
         // --- Fix: Ensure units can move and attack by default ---
