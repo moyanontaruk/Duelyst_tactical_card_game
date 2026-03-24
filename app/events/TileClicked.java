@@ -464,7 +464,7 @@ if (name.equals("wraithling swarm")) {
             gameState.hornOfForsaken = true;
             gameState.hornRobustness = 3;
 
-            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken equipped with 3 robustness.", 3);
+            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken: +3 robustness.", 3);
 
             consumeSelectedCardAndClear(out, gameState, selectedPos);
             return;
