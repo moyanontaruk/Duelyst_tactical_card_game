@@ -19,10 +19,14 @@ public class EndTurnClicked implements EventProcessor {
 
 		if (gameState.gameOver) return;
 
+		// Remove any card selection, move highlights, or spell target highlights
+        // before the turn changes over
 		HighlightUtils.clearSelectionAndHighlights(out, gameState);
 
 		String current = gameState.activePlayer; // "HUMAN" or "AI"
 		boolean isUserClick = (message != null);
+		
+		// A manual end-turn click should only be accepted during the human turn
 		if (isUserClick && !"HUMAN".equals(current)) return;
 
 		// Story #29: when a player's stunned turn ends, clear those stuns
