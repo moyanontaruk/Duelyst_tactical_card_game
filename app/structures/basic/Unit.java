@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import commands.BasicCommands;
 import structures.GameState;
 import akka.actor.ActorRef;
+import utils.BasicObjectBuilders;
+import utils.StaticConfFiles;
 import utils.UnitDeathUtils;
 
 /**
@@ -34,6 +36,7 @@ public class Unit {
 	boolean canMove;
 	boolean canAttack;
 	boolean attackAfterMove;
+
 	
 	public Unit() {}
 	
@@ -156,7 +159,6 @@ public class Unit {
 		this.attackAfterMove = attackAfterMove;
 	}
 
-	// correction to attack () needed -- adding UnitDeathUtils - Maggie
 	public void attack(GameState gameState, ActorRef out, Unit enemy) {
 
 		if (gameState == null || enemy == null) return;
@@ -182,24 +184,24 @@ public class Unit {
 		gameState.unitHadAttacked.put(attackerId, true);
 
 		// attack animation
-		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
+		int attackDelay = BasicCommands.playUnitAnimation(out, this, UnitAnimationType.attack);
+		
 		try {
-			Thread.sleep(600);
+    	if (out != null) Thread.sleep(attackDelay);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
+    	Thread.currentThread().interrupt();
+	}
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.idle);
 
 		// attacker deals damage
 		int defenderNewHp = defenderHp - attackerAtk;
 		//play hit animation on defender BEFORE checking death
-		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.hit);
-		try{
-			// give hit animation time to play 
-			Thread.sleep(400);
-		} catch (InterruptedException e){
-			e.printStackTrace();
-		}
+		int counterDelay = BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.hit);
+		try {
+    	if (out != null) Thread.sleep(counterDelay);
+		} catch (InterruptedException e) {
+    	Thread.currentThread().interrupt();
+}
 		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
 
 		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, enemy, defenderNewHp);
@@ -210,11 +212,12 @@ public class Unit {
 		}
 
 		// counter attack
-		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.attack);
+		int counterAttackDelay = BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.attack);
+		
 		try {
-			Thread.sleep(600);
+			if (out != null) Thread.sleep(counterAttackDelay);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
 		BasicCommands.playUnitAnimation(out, enemy, UnitAnimationType.idle);
 
@@ -224,12 +227,14 @@ public class Unit {
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.hit);
 		try {
 			//give animation time to play
-			Thread.sleep(400);
+			if (out != null) Thread.sleep(400);
 		} catch (InterruptedException e) {
-			e.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
 		BasicCommands.playUnitAnimation(out, this, UnitAnimationType.idle);
 
 		UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, this, attackerNewHp);
 	}
+
+	
 }

@@ -75,6 +75,8 @@ public class Initialize implements EventProcessor {
 
 
         // for Story #17/#30
+        // Extra clears kept here because other story logic relies on these maps
+        // being empty before avatars and units are registered again
         if (gameState.unitMaxHealth != null) gameState.unitMaxHealth.clear();
         if (gameState.unitOwner != null) gameState.unitOwner.clear();
 
@@ -83,7 +85,7 @@ public class Initialize implements EventProcessor {
         gameState.selectedCardIsUnit = false;
 
         // ----------------------------------------------------
-        // 1) Draw board tiles (9x5)
+        // 1) Draw board tiles 
         // ----------------------------------------------------
       for (int x = 0; x < 9; x++) {
         for (int y = 0; y < 5; y++) {
@@ -104,6 +106,8 @@ public class Initialize implements EventProcessor {
 
         // --- story card 14 healing/damage -----
         // link avatar Id so health can change
+        // Fixed avatar ids are useful because other parts of the game
+        // refer back to them when applying damage, healing, and win/loss checks
         gameState.humanAvatarId = 100;
         gameState.aiAvatarId = 200;
 
@@ -126,12 +130,14 @@ public class Initialize implements EventProcessor {
         sleep(80);
 
         // ---- track on board ----
+        // Put both avatars onto the board maps and id lookup maps
         gameState.boardUnits.put(gameState.key(hx, hy), humanAvatar);
         gameState.boardUnits.put(gameState.key(ax, ay), aiAvatar);
         gameState.uiUnitById.put(100, humanAvatar);
         gameState.uiUnitById.put(200, aiAvatar);
 
         // ---- track stats/positions server-side ----
+        // Store combat stats and board positions on the server side
         gameState.unitAttack.put(100, 2);
         gameState.unitAttack.put(200, 2);
         gameState.unitPositionKey.put(100, gameState.key(hx, hy));
@@ -186,27 +192,34 @@ public class Initialize implements EventProcessor {
         if (p1 != null) {
             Arrays.sort(p1);
 
-            // build runtime deck in order
-            // build runtime deck in order, 2 copies of each card
+            // build runtime deck in order: ABCDEFGABCDEFG
             for (String fileName : p1) {
                 String cfg = "conf/gameconfs/cards/" + fileName;
                 gameState.humanDeck.add(cfg);
+            }
+            for (String fileName : p1) {
+                String cfg = "conf/gameconfs/cards/" + fileName;
                 gameState.humanDeck.add(cfg);
             }
+
+            gameState.humanDeckIndex = 0;
 
             // draw starting hand (up to 3 cards)
             int startingDraw = Math.min(3, gameState.humanDeck.size());
             for (int i = 0; i < startingDraw; i++) {
-                String cfg = gameState.humanDeck.remove(0);
-                gameState.humanHand.add(cfg);
+                if (gameState.humanDeckIndex < gameState.humanDeck.size()) {
+                    String cfg = gameState.humanDeck.get(gameState.humanDeckIndex);
+                    gameState.humanDeckIndex++;
+                    gameState.humanHand.add(cfg);
 
-                int handPos = i + 1;
-                int cardId = 1000 + handPos;
+                    int handPos = i + 1;
+                    int cardId = 1000 + handPos;
 
-                Card c = BasicObjectBuilders.loadCard(cfg, cardId, Card.class);
-                if (c != null) {
-                    BasicCommands.drawCard(out, c, handPos, 0);
-                    sleep(80);
+                    Card c = BasicObjectBuilders.loadCard(cfg, cardId, Card.class);
+                    if (c != null) {
+                        BasicCommands.drawCard(out, c, handPos, 0);
+                        sleep(80);
+                    }
                 }
             }
         }
@@ -217,23 +230,31 @@ public class Initialize implements EventProcessor {
         File dir2 = new File("conf/gameconfs/cards/");
         String[] p2 = dir2.list((d, name) -> name.startsWith("2_") && name.endsWith(".json"));
 
-    if (p2 != null) {
-    Arrays.sort(p2);
+        if (p2 != null) {
+            Arrays.sort(p2);
 
-    // build AI runtime deck: 2 copies of each AI card
-    for (String fileName : p2) {
-        String cfg = "conf/gameconfs/cards/" + fileName;
-        gameState.aiDeck.add(cfg);
-        gameState.aiDeck.add(cfg);
-    }
+            // build AI runtime deck in order: ABCDEFGABCDEFG
+            for (String fileName : p2) {
+                String cfg = "conf/gameconfs/cards/" + fileName;
+                gameState.aiDeck.add(cfg);
+            }
+            for (String fileName : p2) {
+                String cfg = "conf/gameconfs/cards/" + fileName;
+                gameState.aiDeck.add(cfg);
+            }
 
-    // draw starting AI hand (up to 3)
-    int startingDraw = Math.min(3, gameState.aiDeck.size());
-    for (int i = 0; i < startingDraw; i++) {
-        String cfg = gameState.aiDeck.remove(0);
-        gameState.aiHand.add(cfg);
-    }
-}
+            gameState.aiDeckIndex = 0;
+
+            // draw starting AI hand (up to 3)
+            int startingDraw = Math.min(3, gameState.aiDeck.size());
+            for (int i = 0; i < startingDraw; i++) {
+                if (gameState.aiDeckIndex < gameState.aiDeck.size()) {
+                    String cfg = gameState.aiDeck.get(gameState.aiDeckIndex);
+                    gameState.aiDeckIndex++;
+                    gameState.aiHand.add(cfg);
+                }
+            }
+        }
 
         
 

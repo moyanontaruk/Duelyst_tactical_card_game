@@ -19,10 +19,14 @@ public class EndTurnClicked implements EventProcessor {
 
 		if (gameState.gameOver) return;
 
+		// Remove any card selection, move highlights, or spell target highlights
+        // before the turn changes over
 		HighlightUtils.clearSelectionAndHighlights(out, gameState);
 
 		String current = gameState.activePlayer; // "HUMAN" or "AI"
 		boolean isUserClick = (message != null);
+		
+		// A manual end-turn click should only be accepted during the human turn
 		if (isUserClick && !"HUMAN".equals(current)) return;
 
 		// Story #29: when a player's stunned turn ends, clear those stuns
@@ -44,7 +48,7 @@ public class EndTurnClicked implements EventProcessor {
 				}
 			}
 		}*/
-		//debug
+
 		// Story #1 + #2: draw 1 card at end of HUMAN turn, discard if hand is full
 		if ("HUMAN".equals(current)) {
 			drawTopHumanCardIntoHand(out, gameState);
@@ -67,16 +71,18 @@ public class EndTurnClicked implements EventProcessor {
 		// ----------------------------------------------------
 		if ("HUMAN".equals(current)) {
 			gameState.activePlayer = "AI";
+			BasicCommands.addPlayer1Notification(out, "AI Turn", 2);
 		} else {
 			gameState.activePlayer = "HUMAN";
+			BasicCommands.addPlayer1Notification(out, "Your Turn", 2);
+
 			// count full rounds: only increase when AI finishes and goes back to HUMAN
 			gameState.turnNumber += 1;
 		}
 
 		String next = gameState.activePlayer;
 
-		// reset zeal buff tracking for the new turn
-		gameState.zealBuffApplied.clear();
+
 
         // debug reset move/attack flags for the player whos new turn is starting - Maggie
 		resetActionsForPlayer(gameState, next);
@@ -95,8 +101,9 @@ public class EndTurnClicked implements EventProcessor {
     	gameState.aiMana = manaForThisTurn;
     	BasicCommands.setPlayer2Mana(out, new Player(gameState.aiHealth, gameState.aiMana));
 			if (gameState.aiHand != null && gameState.aiDeck != null) {
-				if (gameState.aiHand.size() < 6 && !gameState.aiDeck.isEmpty()) {
-					String drawn = gameState.aiDeck.remove(0);
+				if (gameState.aiHand.size() < 6 && gameState.aiDeckIndex < gameState.aiDeck.size()) {
+					String drawn = gameState.aiDeck.get(gameState.aiDeckIndex);
+					gameState.aiDeckIndex++;
 					gameState.aiHand.add(drawn);
 				}
 			}
@@ -105,9 +112,10 @@ public class EndTurnClicked implements EventProcessor {
 	}
 
 	private void drawTopHumanCardIntoHand(ActorRef out, GameState gameState) {
-		if (gameState.humanDeck.isEmpty()) return;
+		if (gameState.humanDeckIndex >= gameState.humanDeck.size()) return;
 
-		String cfg = gameState.humanDeck.remove(0);
+		String cfg = gameState.humanDeck.get(gameState.humanDeckIndex);
+		gameState.humanDeckIndex++;
 
 		// hand full -> overdraw, card is discarded
 		if (gameState.humanHand.size() >= 6) {
@@ -122,7 +130,6 @@ public class EndTurnClicked implements EventProcessor {
 			BasicCommands.drawCard(out, c, handPos, 0);
 		}
 	}
-
 
 
 	// helper method, resets each turn action flags for all units for that player whos

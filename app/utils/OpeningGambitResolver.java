@@ -48,31 +48,23 @@ public static void onSummoned(ActorRef out, GameState gameState, Unit summonedUn
 
     if (name.equals("nightsorrow assassin")) {
         Unit target = firstAdjacentEnemyBelowMax(gameState, summonedUnit, owner);
-        if (target != null) {
-            if (isEnemyAvatar(gameState, owner, target.getId())) {
-                int damage = gameState.unitAttack.getOrDefault(summonedUnit.getId(), 0);
-                int targetHp = gameState.unitHealth.getOrDefault(target.getId(), 0);
-                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, targetHp - damage);
-            } else {
-                UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
-            }
+        if (target != null && !isEnemyAvatar(gameState, owner, target.getId())) {
+            UnitDeathUtils.setUnitHealthAndCheckDeath(out, gameState, target, 0);
         }
         return;
     }
 
     if (name.equals("silverguard squire")) {
-        int[] avatarPos = gameState.getAvatarPosition(owner);
-        if (avatarPos == null) return;
+    int[] avatarPos = gameState.getAvatarPosition(owner);
+    int ax = avatarPos[0];
+    int ay = avatarPos[1];
 
-        int ax = avatarPos[0];
-        int ay = avatarPos[1];
+    int frontX = isHuman ? ax - 1 : ax + 1;
+    int backX  = isHuman ? ax + 1 : ax - 1;
 
-        int frontX = isHuman ? ax + 1 : ax - 1;
-        int backX  = isHuman ? ax - 1 : ax + 1;
-
-        buffIfAllied(out, gameState, frontX, ay, owner);
-        buffIfAllied(out, gameState, backX, ay, owner);
-    }
+    buffIfAllied(out, gameState, frontX, ay, owner);
+    buffIfAllied(out, gameState, backX, ay, owner);
+}
 }
 
     // ------------------------------------------------------------

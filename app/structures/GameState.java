@@ -55,6 +55,8 @@ public class GameState {
 	public List<String> aiDeck = new ArrayList<>();
 	public List<String> aiHand = new ArrayList<>();
 
+	public int humanDeckIndex = 0;
+	public int aiDeckIndex = 0;
 
 	// ---- Unit id generator ----
 	public int nextUnitId = 1000;
@@ -162,7 +164,6 @@ public class GameState {
 	// --- story card 19: damage trigger abilities ---
 	// Zeal and Horn of the Forsaken
 	public final Set<Integer> zealUnitIds = new HashSet<>();
-	public final Set<Integer> zealBuffApplied = new HashSet<>();
 	public boolean hornOfForsaken = false;
 	public int hornRobustness = 0;
 
@@ -173,23 +174,20 @@ public class GameState {
 		if (damagedOwner == null) return;
 
 		//Zeal trigger (Silvergaurd Knight)
-		for (int zealUnitId : zealUnitIds){
-			if (!damagedOwner.equals(unitOwner.get(zealUnitId))) continue;
+        // Zeal trigger (Silverguard Knight)
+        for (int zealUnitId : zealUnitIds) {
+            if (!damagedOwner.equals(unitOwner.get(zealUnitId))) continue;
 
-			// only apply zeal buff once
-			if (zealBuffApplied.contains(zealUnitId)) continue;
+            int currentAttack = unitAttack.getOrDefault(zealUnitId, 0);
+            int newAttack = currentAttack + 2;
 
-			int currentAttack = unitAttack.getOrDefault(zealUnitId, 0);
-			int newAttack = currentAttack + 2;
+            unitAttack.put(zealUnitId, newAttack);
 
-			unitAttack.put(zealUnitId, newAttack);
-			zealBuffApplied.add(zealUnitId);
-
-			Unit zealUnit = uiUnitById.get(zealUnitId);
-			if (zealUnit != null && out != null){
-				BasicCommands.setUnitAttack(out, zealUnit, newAttack);
-			}
-		}
+            Unit zealUnit = uiUnitById.get(zealUnitId);
+            if (zealUnit != null && out != null) {
+                BasicCommands.setUnitAttack(out, zealUnit, newAttack);
+            }
+        }
 
 	// Horn of the Forsaken trigger
 if (unitId == humanAvatarId && hornOfForsaken) {

@@ -90,6 +90,9 @@ public class TileClicked implements EventProcessor {
                         // already adjacent -> attack now
                         if (isAdjacent(ux, uy, ex, ey)) {
                             selectedUnit.attack(gameState, out, enemy);
+                            if (selectedUnit.getId() == gameState.humanAvatarId) {
+                                sleep(600);
+                            }
                             triggerHornOnHit(out, gameState, selectedUnit);
 
                             gameState.selectUnitId = null;
@@ -247,11 +250,7 @@ if (gameState.selectedCardIsUnit) {
     }
 
     Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
-    EffectAnimation summonFx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
-    if (summonFx != null) {
-        BasicCommands.playEffectAnimation(out, summonFx, tile);
-        sleep(120);
-    }
+
 
     if (!spendHumanMana(out, gameState, cost)) return;
 
@@ -303,41 +302,60 @@ if (gameState.selectedCardIsUnit) {
             return;
         }
 
-        // Wraithling Swarm
-        if (name.equals("wraithling swarm")) {
+        
+        
+    // Wraithling Swarm
+// Wraithling Swarm
+// Wraithling Swarm
+if (name.equals("wraithling swarm")) {
 
-            if (gameState.boardUnits.containsKey(gameState.key(tilex, tiley))) return;
-            if (!gameState.highlightedTargetTiles.contains(gameState.key(tilex, tiley))) return;
+    String clickedKey = gameState.key(tilex, tiley);
 
-            if (!spendHumanMana(out, gameState, cost)) return;
+    if (gameState.boardUnits.containsKey(clickedKey)) return;
+    if (!gameState.highlightedTargetTiles.contains(clickedKey)) return;
 
-            Tile tile = BasicObjectBuilders.loadTile(tilex, tiley);
-            EffectAnimation fx = BasicObjectBuilders.loadEffect(StaticConfFiles.f1_summon);
-            if (fx != null) BasicCommands.playEffectAnimation(out, fx, tile);
+    if (!spendHumanMana(out, gameState, cost)) return;
 
-            SummonUtils.spawnWraithling(out, gameState, tilex, tiley, "HUMAN");
+    // Copy the legal highlighted tiles BEFORE summoning anything
+    List<String> legalTiles = new ArrayList<>(gameState.highlightedTargetTiles);
 
-            int summoned = 1;
-            int[] avatarPos = gameState.getAvatarPosition("HUMAN");
-            int ax = avatarPos[0], ay = avatarPos[1];
+    // Sort by distance from the clicked tile, so the sequence grows locally
+    legalTiles.sort((a, b) -> {
+        String[] pa = a.split(",");
+        String[] pb = b.split(",");
+        int ax = Integer.parseInt(pa[0]);
+        int ay = Integer.parseInt(pa[1]);
+        int bx = Integer.parseInt(pb[0]);
+        int by = Integer.parseInt(pb[1]);
 
-            for (int dx = -1; dx <= 1 && summoned < 3; dx++) {
-                for (int dy = -1; dy <= 1 && summoned < 3; dy++) {
-                    if (dx == 0 && dy == 0) continue;
-                    int sx = ax + dx;
-                    int sy = ay + dy;
-                    if (!isOnBoard(sx, sy)) continue;
-                    if (gameState.boardUnits.containsKey(gameState.key(sx, sy))) continue;
-                    if (sx == tilex && sy == tiley) continue;
+        int da = Math.abs(ax - tilex) + Math.abs(ay - tiley);
+        int db = Math.abs(bx - tilex) + Math.abs(by - tiley);
 
-                    SummonUtils.spawnWraithling(out, gameState, sx, sy, "HUMAN");
-                    summoned++;
-                }
-            }
+        if (da != db) return Integer.compare(da, db);
 
-            consumeSelectedCardAndClear(out, gameState, selectedPos);
-            return;
-        }
+        // stable tie-break
+        if (ax != bx) return Integer.compare(ax, bx);
+        return Integer.compare(ay, by);
+    });
+
+    int summoned = 0;
+
+    for (String key : legalTiles) {
+        if (summoned >= 3) break;
+
+        if (gameState.boardUnits.containsKey(key)) continue;
+
+        String[] parts = key.split(",");
+        int sx = Integer.parseInt(parts[0]);
+        int sy = Integer.parseInt(parts[1]);
+
+        SummonUtils.spawnWraithling(out, gameState, sx, sy, "HUMAN");
+        summoned++;
+    }
+
+    consumeSelectedCardAndClear(out, gameState, selectedPos);
+    return;
+}
 
         // Truestrike
         if (name.equals("truestrike")) {
@@ -446,7 +464,7 @@ if (gameState.selectedCardIsUnit) {
             gameState.hornOfForsaken = true;
             gameState.hornRobustness = 3;
 
-            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken equipped with 3 robustness.", 3);
+            BasicCommands.addPlayer1Notification(out, "Horn of the Forsaken: +3 robustness.", 3);
 
             consumeSelectedCardAndClear(out, gameState, selectedPos);
             return;
@@ -581,16 +599,10 @@ if (gameState.selectedCardIsUnit) {
         List<int[]> validTiles = new ArrayList<>();
         boolean isFlying = false;
 
-        if (unit instanceof BetterUnit) {
-            BetterUnit betterUnit = (BetterUnit) unit;
-            if (betterUnit.getKeywords() != null) {
-                for (String keyword : betterUnit.getKeywords()) {
-                    if (keyword != null && keyword.equalsIgnoreCase("flying")) {
-                        isFlying = true;
-                        break;
-                    }
-                }
-            }
+        //  FIX: flying detection by unit name
+        String name = gameState.unitName.get(unit.getId());
+        if (name != null && name.toLowerCase().contains("flamewing")) {
+            isFlying = true;
         }
 
         if (isFlying) {
@@ -648,6 +660,9 @@ if (gameState.selectedCardIsUnit) {
             int diagY = startY + direction[1];
 
             if (!isOnBoard(diagX, diagY)) continue;
+            boolean corner1Blocked = gameState.boardUnits.containsKey(gameState.key(diagX, startY));
+            boolean corner2Blocked = gameState.boardUnits.containsKey(gameState.key(startX, diagY));
+            if (corner1Blocked && corner2Blocked) continue;
 
             String key = gameState.key(diagX, diagY);
             if (gameState.boardUnits.containsKey(key)) continue;
