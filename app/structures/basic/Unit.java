@@ -159,6 +159,17 @@ public class Unit {
 		this.attackAfterMove = attackAfterMove;
 	}
 
+	/**
+	 * #9 (Unit Action: Adjacent Attack)
+	 * #12 (Unit Action: Counter Attack)
+	 * Executes a full attack sequence between this unit and a target enemy unit.
+	 * Includes the initial attack, defender's counter-attack, hit animations,
+	 * and death checks for both units.
+	 *
+	 * @param gameState the current game state holding unit stats and status maps
+	 * @param out       the ActorRef used to send commands to the front-end
+	 * @param enemy     the target unit being attacked
+	 */
 	public void attack(GameState gameState, ActorRef out, Unit enemy) {
 
 		if (gameState == null || enemy == null) return;
@@ -166,6 +177,7 @@ public class Unit {
 		int attackerId = this.id;
 		int defenderId = enemy.id;
 
+		// Retrieve current HP and attack values from the game state maps
 		Integer attackerHpObj = gameState.unitHealth.get(attackerId);
 		Integer defenderHpObj = gameState.unitHealth.get(defenderId);
 		Integer attackerAtkObj = gameState.unitAttack.get(attackerId);
